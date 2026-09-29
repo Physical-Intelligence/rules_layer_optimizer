@@ -1,0 +1,17 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+py_library(
+    name = "release_lib",
+    srcs = ["release.py"],
+)
+
+py_binary(
+    name = "release",
+    srcs = ["release.py"],
+)
+
+py_test(
+    name = "release_test",
+    srcs = ["release_test.py"],
+    deps = [":release_lib"],
+)

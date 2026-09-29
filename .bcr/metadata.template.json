@@ -1,0 +1,15 @@
+{
+  "homepage": "https://github.com/Physical-Intelligence/rules_layer_optimizer",
+  "maintainers": [
+    {
+      "name": "Physical Intelligence",
+      "email": "jimmy@physicalintelligence.company",
+      "github": "jimmyt857"
+    }
+  ],
+  "repository": [
+    "github:Physical-Intelligence/rules_layer_optimizer"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}
