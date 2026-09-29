@@ -1,0 +1,7 @@
+module(name = "rules_layer_optimizer_examples")
+
+bazel_dep(name = "rules_layer_optimizer", version = "0.0.0")
+local_path_override(
+    module_name = "rules_layer_optimizer",
+    path = "..",
+)

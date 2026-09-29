@@ -1,0 +1,4 @@
+module(
+    name = "rules_layer_optimizer",
+    version = "0.0.0",
+)

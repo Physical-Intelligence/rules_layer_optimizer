@@ -1,0 +1,4 @@
+filegroup(
+    name = "library_readme",
+    srcs = ["@rules_layer_optimizer//:README.md"],
+)

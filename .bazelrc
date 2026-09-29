@@ -1,0 +1,3 @@
+common --enable_bzlmod
+common --enable_workspace=false
+build --incompatible_no_implicit_file_export
