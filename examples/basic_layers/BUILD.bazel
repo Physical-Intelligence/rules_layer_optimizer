@@ -1,0 +1,55 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+exports_files(["payload.txt"])
+
+tar(
+    name = "first",
+    srcs = ["payload.txt"],
+    visibility = ["//visibility:public"],
+)
+
+tar(
+    name = "second",
+    mtree = [
+        "#mtree",
+        "./empty type=dir mode=0755 uid=0 gid=0 time=0",
+    ],
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [layer_group(
+        name = "packages",
+        overflow = "flatten",
+        targets = [
+            ":first",
+            ":second",
+        ],
+    )],
+    layer_budget = 2,
+    size_bytes_threshold = 1024,
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "archive_test",
+    srcs = ["archive_test.sh"],
+    args = [
+        "$(rootpath :optimized)",
+        "$(rootpath :optimized_optimization_plan)",
+    ],
+    data = [
+        ":optimized",
+        ":optimized_optimization_plan",
+    ],
+)
+
+write_source_files(
+    name = "write_optimization_plan",
+    files = {"optimization_plan.json": ":optimized_optimization_plan"},
+)

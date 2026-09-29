@@ -1,0 +1,81 @@
+{
+  "groups": [
+    {
+      "flattened_layer_count": 0,
+      "input_tar_count": 1,
+      "name": "interpreter",
+      "output_layer_count": 0,
+      "overflow": "individual",
+      "separate_layer_count": 0
+    },
+    {
+      "flattened_layer_count": 0,
+      "input_tar_count": 3,
+      "name": "pip",
+      "output_layer_count": 0,
+      "overflow": "flatten",
+      "separate_layer_count": 0
+    },
+    {
+      "flattened_layer_count": 0,
+      "input_tar_count": 1,
+      "name": "source",
+      "output_layer_count": 0,
+      "overflow": "individual",
+      "separate_layer_count": 0
+    }
+  ],
+  "layers": [
+    {
+      "disposition": "flattened",
+      "group": "all",
+      "inputs": [
+        {
+          "path": "layers_interpreter.tar.gz",
+          "reason": "flatten_all"
+        },
+        {
+          "path": "../rules_python++pip+pip_312_python_dateutil/pip_tars/python_dateutil.tar.gz",
+          "reason": "flatten_all",
+          "size_hint_bytes": 229892
+        },
+        {
+          "path": "../rules_python++pip+pip_312_colorama/pip_tars/colorama.tar.gz",
+          "reason": "flatten_all",
+          "size_hint_bytes": 25335
+        },
+        {
+          "path": "../rules_python++pip+pip_312_six/pip_tars/six.tar.gz",
+          "reason": "flatten_all",
+          "size_hint_bytes": 11050
+        },
+        {
+          "path": "layers_source.tar.gz",
+          "reason": "flatten_all"
+        }
+      ],
+      "known_input_size_bytes": 266277,
+      "source_groups": [
+        "interpreter",
+        "pip",
+        "source"
+      ],
+      "unknown_input_count": 2
+    }
+  ],
+  "policy": {
+    "flatten_all": true,
+    "layer_budget": 1,
+    "size_threshold_bytes": 1
+  },
+  "schema_version": 1,
+  "summary": {
+    "flattened_layer_count": 1,
+    "input_tar_count": 5,
+    "output_layer_count": 1,
+    "separate_layer_count": 0,
+    "size_eligible_input_count": 0,
+    "size_eligible_inputs_kept_separate": 0
+  },
+  "target": "@@//:archive_all_tars"
+}

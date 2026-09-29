@@ -1,0 +1,7 @@
+# Release consumers need rules and docs; verification fixtures stay in the checkout.
+/.github export-ignore
+/.bcr export-ignore
+/examples export-ignore
+/e2e export-ignore
+/tools export-ignore
+/.pre-commit-config.yaml export-ignore

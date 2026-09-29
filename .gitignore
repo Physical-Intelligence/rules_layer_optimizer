@@ -1,0 +1,4 @@
+bazel-*
+.venv/
+/dist/
+/release_notes.txt

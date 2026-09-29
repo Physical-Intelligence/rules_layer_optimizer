@@ -1,0 +1,99 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@rules_layer_optimizer//apt:defs.bzl", "apt_inference", "inferred_apt_deps")
+load("@rules_layer_optimizer//inference:defs.bzl", "env_file", "env_inference", "layer_inference_bundle")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":contract_test.bzl", "apt_test", "conflict_test")
+
+filegroup(name = "trigger")
+
+filegroup(
+    name = "app",
+    srcs = [":trigger"],
+)
+
+apt_inference(
+    name = "bash_runtime",
+    for_deps = [":trigger"],
+    packages = ["@debs//bash"],
+)
+
+layer_inference_bundle(
+    name = "runtime",
+    inferences = [":bash_runtime"],
+)
+
+inferred_apt_deps(
+    name = "apt_layers",
+    inferences = [":runtime"],
+    packages = ["@debs//bash"],
+    deps = [":app"],
+)
+
+apt_test(
+    name = "apt_metadata_test",
+    target_under_test = ":apt_layers",
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [layer_group(
+        name = "apt",
+        overflow = "flatten",
+        targets = [":apt_layers"],
+    )],
+    layer_budget = 2,
+    size_bytes_threshold = 100,
+)
+
+env_inference(
+    name = "matched_env",
+    env = {
+        "PATH": "/tools",
+        "MODE": "test",
+    },
+    for_deps = [":trigger"],
+)
+
+env_file(
+    name = "env",
+    base_env = {"PATH": "/bin"},
+    extra_env = {"PATH": "/extra"},
+    inferences = [":matched_env"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+env_file(
+    name = "conflict",
+    base_env = {"MODE": "other"},
+    inferences = [":matched_env"],
+    runfiles_root = "/app.runfiles",
+    tags = ["manual"],
+    deps = [":app"],
+)
+
+conflict_test(
+    name = "env_conflict_test",
+    target_under_test = ":conflict",
+)
+
+sh_test(
+    name = "smoke_test",
+    srcs = ["smoke_test.sh"],
+    args = [
+        "$(rootpath :optimized)",
+        "$(rootpath :env)",
+    ],
+    data = [
+        ":env",
+        ":optimized",
+    ],
+)
+
+write_source_files(
+    name = "write_optimization_plan",
+    files = {"optimization_plan.json": ":optimized_optimization_plan"},
+)

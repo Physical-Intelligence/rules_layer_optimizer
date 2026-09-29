@@ -1,0 +1,23 @@
+module(name = "rules_layer_optimizer_smoke")
+
+bazel_dep(name = "rules_layer_optimizer")
+local_path_override(
+    module_name = "rules_layer_optimizer",
+    path = "../..",
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+apt_fixture = use_repo_rule("//:apt_fixture.bzl", "apt_fixture")
+
+apt_fixture(name = "debs")
+
+inference = use_extension("@rules_layer_optimizer//inference:extensions.bzl", "oci_image_inference")
+inference.apt_size_hint(
+    dependency_set = "fixture",
+    lock = "//:apt.lock.json",
+    repository = "@debs//:anchor",
+)
+use_repo(inference, "oci_image_inference_config")

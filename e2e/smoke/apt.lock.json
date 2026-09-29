@@ -1,0 +1,1 @@
+{"dependency_sets":{"fixture":{"sets":{"amd64":{"/fixture/bash:amd64":"1"}}}},"packages":{"/fixture/bash:amd64=1":{"name":"bash","size":42}}}

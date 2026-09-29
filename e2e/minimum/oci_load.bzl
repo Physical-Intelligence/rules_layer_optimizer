@@ -1,0 +1,1 @@
+../../examples/oci_load.bzl

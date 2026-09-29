@@ -1,0 +1,6 @@
+load(":env_test.bzl", "merge_test")
+load(":inferred_layers_test.bzl", "inferred_layers_test_suite")
+
+inferred_layers_test_suite(name = "inferred_layers_test")
+
+merge_test(name = "env_merge_test")
