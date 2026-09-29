@@ -1,0 +1,6 @@
+load(":optimize_layers_test.bzl", "optimize_layers_test_suite")
+load(":order_test.bzl", "order_test")
+
+optimize_layers_test_suite(name = "optimize_layers_test")
+
+order_test(name = "order_test")

@@ -1,0 +1,43 @@
+load("@rules_layer_optimizer//python:rules_python.bzl", "py_image_layer")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load(":tags_test.bzl", "tags_test")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    legacy_create_init = False,
+    deps = ["@pip//colorama"],
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    strip_prefix = "caller_tags/app",
+)
+
+py_image_layer(
+    name = "tagged_layers",
+    binary = ":app",
+    strip_prefix = "caller_tags/app",
+    tags = [
+        "caller-tag",
+        "manual",
+        "no-remote-cache",
+    ],
+)
+
+tags_test(
+    name = "default_tags_test",
+    expected = [],
+    prefix = "app_layers",
+)
+
+tags_test(
+    name = "caller_tags_test",
+    expected = [
+        "manual",
+        "no-remote-cache",
+        "caller-tag",
+    ],
+    prefix = "tagged_layers",
+)

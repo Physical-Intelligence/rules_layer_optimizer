@@ -1,0 +1,3 @@
+# These are independent Bzlmod roots, each discovered and tested by CI.
+examples
+e2e

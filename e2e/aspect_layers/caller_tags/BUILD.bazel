@@ -1,0 +1,46 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@rules_layer_optimizer//python:defs.bzl", "py_image_layer")
+load(":tags_test.bzl", "tags_test")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    deps = ["@packages//colorama"],
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    interpreter_tar = "//:interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    strip_prefix = "caller_tags/app",
+)
+
+py_image_layer(
+    name = "tagged_layers",
+    binary = ":app",
+    interpreter_tar = "//:interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    strip_prefix = "caller_tags/app",
+    tags = [
+        "caller-tag",
+        "manual",
+        "no-remote-cache",
+    ],
+)
+
+tags_test(
+    name = "default_tags_test",
+    expected = [],
+    prefix = "app_layers",
+)
+
+tags_test(
+    name = "caller_tags_test",
+    expected = [
+        "manual",
+        "no-remote-cache",
+        "caller-tag",
+    ],
+    prefix = "tagged_layers",
+)

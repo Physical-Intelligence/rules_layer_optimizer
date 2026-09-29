@@ -1,0 +1,39 @@
+load("@rules_layer_optimizer//python:defs.bzl", "pip_layer_reducer")
+load(":archive_test.bzl", "archive_test")
+load(":sharing_test.bzl", "sharing_test")
+
+filegroup(
+    name = "first",
+    srcs = ["@packages//colorama"],
+)
+
+filegroup(
+    name = "second",
+    srcs = ["@packages//colorama"],
+)
+
+pip_layer_reducer(
+    name = "first_layers",
+    deps = [":first"],
+)
+
+pip_layer_reducer(
+    name = "second_layers",
+    deps = [":second"],
+)
+
+sharing_test(
+    name = "sharing_test",
+    other = ":second_layers",
+    target_under_test = ":first_layers",
+)
+
+archive_test(
+    name = "wheel_contents_test",
+    archive = ":first_layers",
+    contains = [
+        "colorama/__init__.py",
+        "colorama-0.4.6.dist-info/METADATA",
+        "colorama-0.4.6.dist-info/RECORD",
+    ],
+)

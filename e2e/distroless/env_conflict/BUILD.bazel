@@ -1,0 +1,34 @@
+load("@rules_layer_optimizer//inference:defs.bzl", "env_file", "env_inference", "env_inference_bundle")
+load(":conflict_test.bzl", "conflict_test")
+
+filegroup(name = "trigger")
+
+filegroup(
+    name = "app",
+    srcs = [":trigger"],
+)
+
+env_inference(
+    name = "matched_env",
+    env = {"MODE": "test"},
+    for_deps = [":trigger"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":matched_env"],
+)
+
+env_file(
+    name = "conflict",
+    base_env = {"MODE": "other"},
+    inferences = [":env_inferences"],
+    runfiles_root = "/app.runfiles",
+    tags = ["manual"],
+    deps = [":app"],
+)
+
+conflict_test(
+    name = "env_conflict_test",
+    target_under_test = ":conflict",
+)

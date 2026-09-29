@@ -1,0 +1,12 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//:__subpackages__"],
+)
+
+tar(
+    name = "empty_tar",
+    mtree = ["#mtree"],
+    visibility = ["//visibility:public"],
+)

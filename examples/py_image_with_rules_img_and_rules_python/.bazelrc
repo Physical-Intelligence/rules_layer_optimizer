@@ -1,0 +1,4 @@
+import %workspace%/../../.bazelrc
+
+# Launch binaries with the in-build interpreter instead of a system Python.
+build --@rules_python//python/config_settings:bootstrap_impl=script

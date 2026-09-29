@@ -1,0 +1,26 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load(":interpreter.bzl", "interpreter_path")
+
+exports_files([
+    "pyproject.toml",
+    "uv.lock",
+])
+
+mtree_spec(
+    name = "interpreter_mtree",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+)
+
+mtree_mutate(
+    name = "interpreter_paths",
+    mtree = ":interpreter_mtree",
+    package_dir = interpreter_path(),
+)
+
+tar(
+    name = "interpreter",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+    compress = "gzip",
+    mtree = ":interpreter_paths",
+    visibility = ["//visibility:public"],
+)

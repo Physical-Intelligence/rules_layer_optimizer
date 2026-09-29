@@ -1,0 +1,138 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_layer_optimizer//python:defs.bzl", "py_image_layer")
+load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    data = [
+        ":first_asset",
+        ":native_extension",
+        ":second_asset",
+        ":third_asset",
+    ],
+    deps = [
+        "@packages//backports_strenum",
+        "@packages//backports_tarfile",
+        "@packages//colorama",
+        "@packages//google_crc32c",
+    ],
+)
+
+write_file(
+    name = "first_asset",
+    out = "fixtures/first.txt",
+    content = ["first"],
+)
+
+write_file(
+    name = "second_asset",
+    out = "fixtures/second.txt",
+    content = ["second"],
+)
+
+write_file(
+    name = "third_asset",
+    out = "fixtures/third.txt",
+    content = ["third"],
+)
+
+write_file(
+    name = "native_extension",
+    out = "fixtures/binding.so",
+    content = ["native payload"],
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    compress = "gzip",
+    interpreter_tar = "//:interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    strip_prefix = "source_layers/app",
+)
+
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@packages//colorama"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama_env"],
+)
+
+env_file(
+    name = "env",
+    inferences = [":env_inferences"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [
+        layer_group(
+            name = "pip",
+            overflow = "flatten",
+            targets = [":app_layers_pip"],
+        ),
+    ],
+    layer_budget = 4,
+    size_bytes_threshold = 1,
+)
+
+sh_test(
+    name = "source_entries_test",
+    srcs = ["source_entries_test.sh"],
+    args = [
+        "$(rootpath :app_layers_source)",
+        "$(rootpath :env)",
+        "$(rootpath :optimized_optimization_plan)",
+    ],
+    data = [
+        ":app_layers_source",
+        ":env",
+        ":optimized_optimization_plan",
+    ],
+)
+
+py_image_layer(
+    name = "partitioned_layers",
+    binary = ":app",
+    compress = "gzip",
+    exclude_patterns = ["/fixtures/second[.]txt$"],
+    interpreter_tar = "//:interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    source_layers = {
+        "first": ["/fixtures/first[.]txt$"],
+        "assets": ["/fixtures/.*[.]txt$"],
+        "empty": ["/does_not_exist/"],
+    },
+    strip_prefix = "source_layers/app",
+)
+
+py_test(
+    name = "source_layers_test",
+    srcs = ["source_layers_test.py"],
+    args = [
+        "$(rootpath :partitioned_layers_source)",
+        "$(rootpath :partitioned_layers_source_first)",
+        "$(rootpath :partitioned_layers_source_assets)",
+        "$(rootpath :partitioned_layers_source_empty)",
+    ],
+    data = [
+        ":partitioned_layers_source",
+        ":partitioned_layers_source_assets",
+        ":partitioned_layers_source_empty",
+        ":partitioned_layers_source_first",
+    ],
+    main = "source_layers_test.py",
+)

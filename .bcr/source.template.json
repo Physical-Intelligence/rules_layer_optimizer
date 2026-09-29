@@ -1,0 +1,5 @@
+{
+  "integrity": "",
+  "strip_prefix": "rules_layer_optimizer-{VERSION}",
+  "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/rules_layer_optimizer-{VERSION}.tar.gz"
+}

@@ -1,0 +1,2 @@
+common --enable_bzlmod
+build --incompatible_no_implicit_file_export

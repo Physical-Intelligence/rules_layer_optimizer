@@ -1,0 +1,10 @@
+module(name = "layer_plan")
+
+bazel_dep(name = "rules_layer_optimizer")
+local_path_override(
+    module_name = "rules_layer_optimizer",
+    path = "../..",
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")

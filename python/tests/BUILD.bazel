@@ -1,0 +1,43 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load(":pip_layer_aspect_test.bzl", "pip_layer_aspect_test_suite")
+load(":pip_size_hints_repository_test.bzl", "pip_size_hints_repository_test_suite")
+load(":repository_paths_test.bzl", "repository_paths_test_suite")
+
+pip_size_hints_repository_test_suite(name = "pip_size_hints_repository_test")
+
+repository_paths_test_suite(name = "repository_paths_test")
+
+py_test(
+    name = "pip_layer_mtree_test",
+    srcs = ["pip_layer_mtree_test.py"],
+    data = [
+        "//python/private:pip_layer_mtree.awk",
+        "@gawk",
+    ],
+    env = {
+        "GAWK": "$(rootpath @gawk)",
+        "PIP_LAYER_MTREE_AWK": "$(rootpath //python/private:pip_layer_mtree.awk)",
+    },
+)
+
+pip_layer_aspect_test_suite(name = "pip_layer_aspect_test")
+
+py_test(
+    name = "rules_python_split_test",
+    srcs = ["rules_python_split_test.py"],
+    data = [
+        "//python/private:rules_python_split.awk",
+        "@gawk",
+    ],
+    env = {
+        "GAWK": "$(rootpath @gawk)",
+        "SPLIT_AWK": "$(rootpath //python/private:rules_python_split.awk)",
+    },
+)
+
+py_test(
+    name = "mtree_symlinks_test",
+    srcs = ["mtree_symlinks_test.py"],
+    data = ["//python/private:mtree_symlinks.py"],
+    env = {"FILTER": "$(rootpath //python/private:mtree_symlinks.py)"},
+)

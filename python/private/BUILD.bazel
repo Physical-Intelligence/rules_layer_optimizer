@@ -1,0 +1,14 @@
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//:__subpackages__"],
+)
+
+exports_files(
+    glob(["*.awk"]),
+    visibility = ["//visibility:public"],
+)
+
+exports_files(
+    ["mtree_symlinks.py"],
+    visibility = ["//:__subpackages__"],
+)

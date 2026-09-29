@@ -1,0 +1,77 @@
+module(name = "rules_layer_optimizer_py_image")
+
+bazel_dep(name = "rules_layer_optimizer")
+local_path_override(
+    module_name = "rules_layer_optimizer",
+    path = "../..",
+)
+
+bazel_dep(name = "aspect_rules_py", version = "2.0.0-alpha.4")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_distroless", version = "0.9.4")
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_python", version = "1.9.0")
+
+python = use_extension("@aspect_rules_py//py:extensions.bzl", "python_interpreters")
+python.toolchain(python_version = "3.12")
+use_repo(python, "python_3_12_x86_64_unknown_linux_gnu", "python_interpreters")
+
+register_toolchains("@python_interpreters//:all")
+
+apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
+apt.sources_list(
+    architectures = ["amd64"],
+    components = ["main"],
+    suites = ["noble"],
+    types = ["deb"],
+    uris = ["https://snapshot.ubuntu.com/ubuntu/20240601T000000Z"],
+)
+apt.install(
+    dependency_set = "noble",
+    packages = [
+        "base-files",
+        "bash",
+        "ca-certificates",
+        "coreutils",
+        "gawk",
+        "grep",
+        "libssl3t64",
+        "libstdc++6",
+        "netbase",
+        "openssl",
+        "sed",
+        "tzdata",
+    ],
+    suites = ["noble"],
+)
+apt.lock(into = "//shared:apt.lock.json")
+use_repo(apt, "noble")
+
+uv = use_extension("@aspect_rules_py//uv:extensions.bzl", "uv")
+uv.declare_hub(hub_name = "pip")
+uv.project(
+    hub_name = "pip",
+    lock = "//:uv.lock",
+    pyproject = "//:pyproject.toml",
+)
+use_repo(uv, "pip")
+
+inference = use_extension("@rules_layer_optimizer//inference:extensions.bzl", "oci_image_inference")
+inference.configure(
+    dependency_attributes = [
+        "deps",
+        "src",
+        "srcs",
+        "actual",
+        "venv",
+    ],
+    pip_hub = "@pip//:defs.bzl",
+)
+inference.pip_size_hint(lock = "//:uv.lock")
+inference.apt_size_hint(
+    dependency_set = "noble",
+    lock = "//shared:apt.lock.json",
+    repository = "@noble//:dpkg_status",
+)
+use_repo(inference, "oci_image_inference_config")

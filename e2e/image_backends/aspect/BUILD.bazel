@@ -1,0 +1,159 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test")
+load("@rules_img//img:image.bzl", "image_manifest")
+load("@rules_img//img:load.bzl", "image_load")
+load("@rules_img_images.bzl", "image")
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_layer_optimizer//python:defs.bzl", "py_image_layer")
+load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("//:oci_load.bzl", "oci_load")
+load(":interpreter.bzl", "interpreter_path")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    deps = [
+        "@packages//backports_strenum",
+        "@packages//backports_tarfile",
+        "@packages//colorama",
+        "@packages//google_crc32c",
+    ],
+)
+
+mtree_spec(
+    name = "interpreter_mtree",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+)
+
+mtree_mutate(
+    name = "interpreter_paths",
+    mtree = ":interpreter_mtree",
+    package_dir = interpreter_path(),
+)
+
+tar(
+    name = "interpreter",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+    compress = "gzip",
+    mtree = ":interpreter_paths",
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    compress = "gzip",
+    interpreter_tar = ":interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    strip_prefix = "aspect/app",
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [
+        layer_group(
+            name = "interpreter",
+            targets = [":interpreter"],
+        ),
+        layer_group(
+            name = "pip",
+            overflow = "flatten",
+            targets = [":app_layers_pip"],
+        ),
+        layer_group(
+            name = "source",
+            targets = [":app_layers_source"],
+        ),
+    ],
+    layer_budget = 8,
+    size_bytes_threshold = 1,
+)
+
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@packages//colorama"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama_env"],
+)
+
+env_file(
+    name = "env",
+    inferences = [":env_inferences"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    entrypoint = ["/app"],
+    env = ":env",
+    tars = [":optimized"],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["rules-layer-optimizer-aspect-oci:local"],
+)
+
+image_manifest(
+    name = "img_image",
+    base = image("img_ubuntu"),
+    entrypoint = ["/app"],
+    env_file = ":env",
+    layers = [":optimized"],
+)
+
+image_load(
+    name = "img_load",
+    image = ":img_image",
+    tag = "docker.io/library/rules-layer-optimizer-aspect-img:local",
+)
+
+filegroup(
+    name = "img_layout",
+    srcs = [":img_image"],
+    output_group = "oci_layout",
+)
+
+py_test(
+    name = "backend_equivalence_test",
+    srcs = ["backend_equivalence_test.py"],
+    args = [
+        "$(rootpath :image)",
+        "$(rootpath :img_layout)",
+    ],
+    data = [
+        ":image",
+        ":img_layout",
+    ],
+    main = "backend_equivalence_test.py",
+)
+
+py_test(
+    name = "oci_image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = ["$(rootpath :load)"],
+    data = [":load"],
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)
+
+py_test(
+    name = "img_image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = ["$(rootpath :img_load)"],
+    data = [":img_load"],
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)

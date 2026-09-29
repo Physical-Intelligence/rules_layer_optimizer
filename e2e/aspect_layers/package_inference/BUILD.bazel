@@ -1,0 +1,55 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+load("@rules_layer_optimizer//inference:defs.bzl", "layer_inference_bundle")
+load("@rules_layer_optimizer//python:inference.bzl", "apt_inference", "inferred_apt_deps", "inferred_layers", "layer_inference")
+load(":inference_test.bzl", "inference_test")
+
+tar(
+    name = "payload",
+    srcs = ["payload.txt"],
+)
+
+filegroup(
+    name = "colorama",
+    srcs = ["@packages//colorama"],
+)
+
+layer_inference(
+    name = "package_runtime",
+    for_deps = ["@packages//colorama"],
+    layers = [":payload"],
+)
+
+layer_inference_bundle(
+    name = "layer_inferences",
+    inferences = [":package_runtime"],
+)
+
+inferred_layers(
+    name = "runtime_layers",
+    inferences = [":layer_inferences"],
+    deps = [":colorama"],
+)
+
+apt_inference(
+    name = "apt_runtime",
+    for_deps = ["@packages//colorama"],
+    tars = [":payload"],
+)
+
+layer_inference_bundle(
+    name = "apt_inferences",
+    inferences = [":apt_runtime"],
+)
+
+inferred_apt_deps(
+    name = "apt_layers",
+    inferences = [":apt_inferences"],
+    deps = [":colorama"],
+)
+
+inference_test(
+    name = "inference_test",
+    apt = ":apt_layers",
+    expected = ":payload",
+    target_under_test = ":runtime_layers",
+)

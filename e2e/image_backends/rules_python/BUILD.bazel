@@ -1,0 +1,141 @@
+load("@rules_img//img:image.bzl", "image_manifest")
+load("@rules_img//img:load.bzl", "image_load")
+load("@rules_img_images.bzl", "image")
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
+load("@rules_layer_optimizer//python:rules_python.bzl", "py_image_layer")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("//:oci_load.bzl", "oci_load")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    legacy_create_init = False,
+    deps = [
+        "@pip//backports_strenum",
+        "@pip//backports_tarfile",
+        "@pip//colorama",
+        "@pip//google_crc32c",
+    ],
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    strip_prefix = "rules_python/app",
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [
+        layer_group(
+            name = "interpreter",
+            targets = [":app_layers_interpreter"],
+        ),
+        layer_group(
+            name = "pip",
+            overflow = "flatten",
+            targets = [":app_layers_pip"],
+        ),
+        layer_group(
+            name = "source",
+            targets = [":app_layers_source"],
+        ),
+    ],
+    layer_budget = 8,
+    size_bytes_threshold = 1,
+)
+
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@packages//colorama"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama_env"],
+)
+
+env_file(
+    name = "env",
+    inferences = [":env_inferences"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    entrypoint = ["/app"],
+    env = ":env",
+    tars = [":optimized"],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["rules-layer-optimizer-rules-python-oci:local"],
+)
+
+image_manifest(
+    name = "img_image",
+    base = image("img_ubuntu"),
+    entrypoint = ["/app"],
+    env_file = ":env",
+    layers = [":optimized"],
+)
+
+image_load(
+    name = "img_load",
+    image = ":img_image",
+    tag = "docker.io/library/rules-layer-optimizer-rules-python-img:local",
+)
+
+filegroup(
+    name = "img_layout",
+    srcs = [":img_image"],
+    output_group = "oci_layout",
+)
+
+py_test(
+    name = "backend_equivalence_test",
+    srcs = ["backend_equivalence_test.py"],
+    args = [
+        "$(rootpath :image)",
+        "$(rootpath :img_layout)",
+    ],
+    data = [
+        ":image",
+        ":img_layout",
+    ],
+    legacy_create_init = False,
+    main = "backend_equivalence_test.py",
+)
+
+py_test(
+    name = "oci_image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = ["$(rootpath :load)"],
+    data = [":load"],
+    legacy_create_init = False,
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)
+
+py_test(
+    name = "img_image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = ["$(rootpath :img_load)"],
+    data = [":img_load"],
+    legacy_create_init = False,
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)

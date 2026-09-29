@@ -1,0 +1,257 @@
+{
+  "groups": [
+    {
+      "flattened_layer_count": 1,
+      "input_tar_count": 29,
+      "name": "apt",
+      "output_layer_count": 3,
+      "overflow": "flatten",
+      "separate_layer_count": 2
+    },
+    {
+      "flattened_layer_count": 0,
+      "input_tar_count": 1,
+      "name": "interpreter",
+      "output_layer_count": 1,
+      "overflow": "individual",
+      "separate_layer_count": 1
+    },
+    {
+      "flattened_layer_count": 1,
+      "input_tar_count": 4,
+      "name": "pip",
+      "output_layer_count": 1,
+      "overflow": "flatten",
+      "separate_layer_count": 0
+    },
+    {
+      "flattened_layer_count": 0,
+      "input_tar_count": 1,
+      "name": "source",
+      "output_layer_count": 1,
+      "overflow": "individual",
+      "separate_layer_count": 1
+    }
+  ],
+  "layers": [
+    {
+      "disposition": "separate",
+      "group": "apt",
+      "inputs": [
+        {
+          "path": "../rules_distroless++apt+noble_libssl3t64-amd64_3.0.13-0ubuntu3/content.tar.gz",
+          "reason": "above_size_threshold",
+          "size_hint_bytes": 1936306
+        }
+      ],
+      "known_input_size_bytes": 1936306,
+      "unknown_input_count": 0
+    },
+    {
+      "disposition": "separate",
+      "group": "apt",
+      "inputs": [
+        {
+          "path": "../rules_distroless++apt+noble_coreutils-amd64_9.4-3ubuntu6/content.tar.gz",
+          "reason": "above_size_threshold",
+          "size_hint_bytes": 1412418
+        }
+      ],
+      "known_input_size_bytes": 1412418,
+      "unknown_input_count": 0
+    },
+    {
+      "disposition": "flattened",
+      "group": "apt",
+      "inputs": [
+        {
+          "path": "../rules_distroless++apt+noble_libcrypt1-amd64_1-4.4.36-4build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libc6-amd64_2.39-0ubuntu8/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libgcc-s1-amd64_14-20240412-0ubuntu1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_gcc-14-base-amd64_14-20240412-0ubuntu1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_mawk-amd64_1.3.4.20240123-1build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_base-files-amd64_13ubuntu10/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 73634
+        },
+        {
+          "path": "../rules_distroless++apt+noble_debconf-amd64_1.5.86ubuntu1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_openssl-amd64_3.0.13-0ubuntu3/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 1001730
+        },
+        {
+          "path": "../rules_distroless++apt+noble_ca-certificates-amd64_20240203/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 159378
+        },
+        {
+          "path": "../rules_distroless++apt+noble_netbase-amd64_6.4/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 13112
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libstdc--6-amd64_14-20240412-0ubuntu1/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 795158
+        },
+        {
+          "path": "../rules_distroless++apt+noble_tzdata-amd64_2024a-2ubuntu1/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 273318
+        },
+        {
+          "path": "../rules_distroless++apt+noble_debianutils-amd64_5.17build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libtinfo6-amd64_6.4-20240113-1ubuntu2/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_bash-amd64_5.2.21-2ubuntu4/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 794086
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libselinux1-amd64_3.5-2ubuntu2/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libpcre2-8-0-amd64_10.42-4ubuntu2/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libgmp10-amd64_2-6.3.0-dfsg-2ubuntu6/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libattr1-amd64_1-2.5.2-1build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libacl1-amd64_2.3.2-1build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libsigsegv2-amd64_2.14-1ubuntu2/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libreadline8t64-amd64_8.2-4build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_readline-common-amd64_8.2-4build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_libmpfr6-amd64_4.2.1-1build1/content.tar.gz",
+          "reason": "missing_size_hint"
+        },
+        {
+          "path": "../rules_distroless++apt+noble_gawk-amd64_1-5.2.1-2build3/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 462772
+        },
+        {
+          "path": "../rules_distroless++apt+noble_sed-amd64_4.9-2build1/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 193410
+        },
+        {
+          "path": "../rules_distroless++apt+noble_grep-amd64_3.11-4build1/content.tar.gz",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 162040
+        }
+      ],
+      "known_input_size_bytes": 3928638,
+      "unknown_input_count": 17
+    },
+    {
+      "disposition": "separate",
+      "group": "interpreter",
+      "inputs": [
+        {
+          "path": "shared/python_interpreter.tar.gz",
+          "reason": "fixed"
+        }
+      ],
+      "known_input_size_bytes": 0,
+      "unknown_input_count": 1
+    },
+    {
+      "disposition": "flattened",
+      "group": "pip",
+      "inputs": [
+        {
+          "path": "../aspect_rules_py++uv+whl_install__py_image__google_crc32c__1_7_1/pip_tars/google_crc32c.tar.zst",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 32794
+        },
+        {
+          "path": "../aspect_rules_py++uv+whl_install__py_image__backports_tarfile__1_2_0/pip_tars/backports_tarfile.tar.zst",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 30181
+        },
+        {
+          "path": "../aspect_rules_py++uv+whl_install__py_image__colorama__0_4_6/pip_tars/colorama.tar.zst",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 25335
+        },
+        {
+          "path": "../aspect_rules_py++uv+whl_install__py_image__backports_strenum__1_2_8/pip_tars/backports_strenum.tar.zst",
+          "reason": "below_size_threshold",
+          "size_hint_bytes": 7862
+        }
+      ],
+      "known_input_size_bytes": 96172,
+      "unknown_input_count": 0
+    },
+    {
+      "disposition": "separate",
+      "group": "source",
+      "inputs": [
+        {
+          "path": "app/image_layers_source.tar.gz",
+          "reason": "fixed"
+        }
+      ],
+      "known_input_size_bytes": 0,
+      "unknown_input_count": 1
+    }
+  ],
+  "policy": {
+    "flatten_all": false,
+    "layer_budget": 127,
+    "size_threshold_bytes": 1048576
+  },
+  "schema_version": 1,
+  "summary": {
+    "flattened_layer_count": 2,
+    "input_tar_count": 35,
+    "output_layer_count": 6,
+    "separate_layer_count": 4,
+    "size_eligible_input_count": 2,
+    "size_eligible_inputs_kept_separate": 2
+  },
+  "target": "@@//app:image_optimized_all_tars"
+}

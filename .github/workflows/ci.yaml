@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: pip install pre-commit==4.2.0
+      - run: pre-commit run --all-files
+
+  modules:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.modules.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - id: modules
+        run: |
+          matrix=$(git ls-files | jq -Rsc 'split("\n") | map(select(test("(^|/)MODULE[.]bazel$")) | sub("/?MODULE[.]bazel$"; "") | if . == "" then "." else . end) | sort')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: modules
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ matrix.module }}
+          repository-cache: true
+      - if: matrix.module == 'e2e/minimum'
+        name: Verify resolved minimum versions
+        working-directory: e2e/minimum
+        run: |
+          bazel mod graph --output=json > "$RUNNER_TEMP/minimum_graph.json"
+          jq -e -f assert_versions.jq "$RUNNER_TEMP/minimum_graph.json"
+      - run: bazel test //...
+        working-directory: ${{ matrix.module }}
+      - if: matrix.module == '.'
+        name: Verify source archive installation
+        run: bazel run //tools:release -- --output "$RUNNER_TEMP/rules_layer_optimizer_release" --verify
+
+  all-tests-passed:
+    runs-on: ubuntu-24.04
+    needs: [format, modules, build]
+    if: always()
+    steps:
+      - name: Require every job to succeed
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: jq -e 'all(.[]; . == "success")' <<< "$RESULTS"

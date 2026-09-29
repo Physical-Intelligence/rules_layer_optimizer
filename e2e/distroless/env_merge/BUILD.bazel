@@ -1,0 +1,39 @@
+load("@rules_layer_optimizer//inference:defs.bzl", "env_file", "env_inference", "env_inference_bundle")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+filegroup(name = "trigger")
+
+filegroup(
+    name = "app",
+    srcs = [":trigger"],
+)
+
+env_inference(
+    name = "matched_env",
+    env = {
+        "PATH": "/tools",
+        "MODE": "test",
+    },
+    for_deps = [":trigger"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":matched_env"],
+)
+
+env_file(
+    name = "env",
+    base_env = {"PATH": "/bin"},
+    extra_env = {"PATH": "/extra"},
+    inferences = [":env_inferences"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+sh_test(
+    name = "env_merge_test",
+    srcs = ["env_merge_test.sh"],
+    args = ["$(rootpath :env)"],
+    data = [":env"],
+)

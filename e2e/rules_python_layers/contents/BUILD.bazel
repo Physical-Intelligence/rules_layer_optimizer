@@ -1,0 +1,50 @@
+load("@rules_layer_optimizer//python:rules_python.bzl", "py_image_layer")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load(":archive_test.bzl", "archive_test")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    legacy_create_init = False,
+    deps = [
+        "@pip//backports_strenum",
+        "@pip//backports_tarfile",
+        "@pip//colorama",
+        "@pip//google_crc32c",
+    ],
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    strip_prefix = "contents/app",
+)
+
+archive_test(
+    name = "wheel_contents_test",
+    archive = ":app_layers_pip",
+    contains = [
+        "colorama/__init__.py",
+        "colorama-0.4.6.dist-info/METADATA",
+        "colorama-0.4.6.dist-info/WHEEL",
+        "google_crc32c/_crc32c.cpython-312",
+        "google_crc32c.libs/libcrc32c-",
+        "backports/tarfile/__init__.py",
+        "backports/strenum/__init__.py",
+    ],
+)
+
+archive_test(
+    name = "source_contents_test",
+    archive = ":app_layers_source",
+    contains = ["app.runfiles/_main/contents/app.py"],
+    excludes = [
+        "colorama/__init__.py",
+        "/bin/python3.12",
+        "_crc32c.cpython-312",
+        "/libcrc32c-",
+        "backports/tarfile/__init__.py",
+        "backports/strenum/__init__.py",
+        "colorama-0.4.6.dist-info/METADATA",
+    ],
+)
