@@ -12,15 +12,14 @@ install both hook stages:
 ```sh
 pre-commit install --hook-type pre-commit --hook-type pre-push
 pre-commit run --all-files
-bazel build //...
-(cd examples && bazel build //...)
-(cd e2e/smoke && bazel build //...)
+bazel test //...
+(cd examples && bazel test //...)
+(cd e2e/smoke && bazel test //...)
 ```
 
-The scaffold has no rule implementations or behavioral tests yet. The external
-modules check basic module resolution through `local_path_override`; behavioral
-and analysis tests must accompany each extracted rule. Run them with
-`bazel test //...` once they are present.
+The root contains focused unit and analysis tests. The examples module builds
+real package and image archives; the smoke module exercises external-repository
+inference with a small APT fixture. Behavioral tests must accompany rule changes.
 
 Use Graphite for branches and draft PRs. Keep PRs as drafts without reviewers
 until the author explicitly chooses to request review.

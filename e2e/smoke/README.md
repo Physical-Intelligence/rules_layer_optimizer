@@ -1,6 +1,10 @@
-# External-consumer smoke module
+# External-consumer smoke tests
 
-This module imports the ruleset as an external dependency. Its initial
-`library_readme` target validates module resolution without relying on root
-module development dependencies. During extraction, add a minimal image build
-and checks for public load paths, repository mappings, and tool resolution.
+Run `bazel test //...` here to test the library outside its root module with no
+configured pip hub. Public entrypoints exercise graph matching, APT size-hint
+propagation, duplicate package removal, environment merging and conflict errors,
+and materialized archive contents.
+
+The `debs` repository is a small fixture with the public distroless `:data`
+relationship. Its v2 lock supplies deterministic size metadata. This isolates
+adapter and Bzlmod repository-mapping behavior; it is not a live APT resolver test.

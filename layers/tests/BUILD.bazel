@@ -1,1 +1,3 @@
-package(default_visibility = ["//visibility:private"])
+load(":optimize_layers_test.bzl", "optimize_layers_test_suite")
+
+optimize_layers_test_suite(name = "optimize_layers_test")

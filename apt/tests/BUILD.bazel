@@ -1,1 +1,3 @@
-package(default_visibility = ["//visibility:private"])
+load(":apt_size_hints_repository_test.bzl", "apt_size_hints_repository_test_suite")
+
+apt_size_hints_repository_test_suite(name = "apt_size_hints_repository_test")

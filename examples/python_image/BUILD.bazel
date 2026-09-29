@@ -1,1 +1,111 @@
-# Reserved for the runnable example described in //:README.md.
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
+load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
+load("@rules_layer_optimizer//python:defs.bzl", "py_image_layer")
+load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":interpreter.bzl", "interpreter_path")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    deps = ["@packages//colorama"],
+)
+
+mtree_spec(
+    name = "interpreter_mtree",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+)
+
+mtree_mutate(
+    name = "interpreter_paths",
+    mtree = ":interpreter_mtree",
+    package_dir = interpreter_path(),
+)
+
+tar(
+    name = "interpreter",
+    srcs = ["@python_3_12_x86_64_unknown_linux_gnu//:files"],
+    compress = "gzip",
+    mtree = ":interpreter_paths",
+)
+
+py_image_layer(
+    name = "app_layers",
+    binary = ":app",
+    compress = "gzip",
+    interpreter_tar = ":interpreter",
+    python_toolchain = "@python_interpreters//:current_py_toolchain",
+    root = "/app",
+    source_dep_buckets = [],
+    strip_prefix = "python_image/app",
+)
+
+optimized_layers(
+    name = "optimized",
+    compress = "gzip",
+    groups = [
+        layer_group(
+            name = "interpreter",
+            targets = [":interpreter"],
+        ),
+        layer_group(
+            name = "pip",
+            overflow = "flatten",
+            targets = [":app_layers_pip"],
+        ),
+        layer_group(
+            name = "source",
+            targets = [":app_layers_source"],
+        ),
+    ],
+    layer_budget = 8,
+    size_bytes_threshold = 1,
+)
+
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@packages//colorama"],
+)
+
+env_file(
+    name = "env",
+    base_env = {},
+    extra_env = {},
+    inferences = [":colorama_env"],
+    runfiles_root = "/app.runfiles",
+    deps = [":app"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    entrypoint = ["/app"],
+    env = ":env",
+    tars = [":optimized"],
+)
+
+sh_test(
+    name = "layers_test",
+    srcs = ["layers_test.sh"],
+    args = [
+        "$(rootpath :app_layers_source)",
+        "$(rootpath :env)",
+        "$(rootpath :optimized_optimization_plan)",
+    ],
+    data = [
+        ":app_layers_source",
+        ":env",
+        ":image",
+        ":optimized_optimization_plan",
+    ],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["rules-layer-optimizer-example:local"],
+)

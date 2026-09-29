@@ -1,1 +1,26 @@
-package(default_visibility = ["//visibility:private"])
+load("@rules_python//python:defs.bzl", "py_test")
+load(":pip_layer_aspect_test.bzl", "pip_layer_aspect_test_suite")
+load(":pip_size_hints_repository_test.bzl", "pip_size_hints_repository_test_suite")
+load(":repository_paths_test.bzl", "repository_paths_test_suite")
+load(":source_dep_buckets_test.bzl", "source_dep_buckets_test_suite")
+
+pip_size_hints_repository_test_suite(name = "pip_size_hints_repository_test")
+
+repository_paths_test_suite(name = "repository_paths_test")
+
+source_dep_buckets_test_suite(name = "source_dep_buckets_test")
+
+py_test(
+    name = "pip_layer_mtree_test",
+    srcs = ["pip_layer_mtree_test.py"],
+    data = [
+        "//python/private:pip_layer_mtree.awk",
+        "@gawk",
+    ],
+    env = {
+        "GAWK": "$(rootpath @gawk)",
+        "PIP_LAYER_MTREE_AWK": "$(rootpath //python/private:pip_layer_mtree.awk)",
+    },
+)
+
+pip_layer_aspect_test_suite(name = "pip_layer_aspect_test")

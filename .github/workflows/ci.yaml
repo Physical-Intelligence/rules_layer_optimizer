@@ -37,5 +37,14 @@ jobs:
           bazelisk-cache: true
           disk-cache: ${{ matrix.module }}
           repository-cache: true
-      - run: bazel build //...
+      - run: bazel test //...
         working-directory: ${{ matrix.module }}
+      - if: matrix.module == 'examples'
+        run: bazel test //python_image:layers_test //shared_dependencies:sharing_test //shared_dependencies:wheel_contents_test
+        working-directory: examples
+      - if: matrix.module == 'examples'
+        name: Run the example image
+        working-directory: examples
+        run: |
+          bazel run //python_image:load
+          docker run --rm --network none rules-layer-optimizer-example:local | grep -F 'hello from reusable layers'

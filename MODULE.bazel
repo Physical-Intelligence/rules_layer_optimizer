@@ -2,3 +2,29 @@ module(
     name = "rules_layer_optimizer",
     version = "0.0.0",
 )
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "aspect_rules_py", version = "2.0.0-alpha.4")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "gawk", version = "5.3.2.bcr.7")
+bazel_dep(name = "rules_distroless", version = "0.9.4")
+bazel_dep(name = "rules_python", version = "1.9.0")
+bazel_dep(name = "toml.bzl", version = "0.3.0")
+
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.tar()
+use_repo(bazel_lib_toolchains, "bsd_tar_toolchains")
+
+inference = use_extension("//inference:extensions.bzl", "oci_image_inference")
+use_repo(inference, "oci_image_inference_config")
+
+# Only this module's tests use the empty inference configuration.
+# Consumers must supply their own root-module configuration.
+test_inference = use_extension("//inference:extensions.bzl", "oci_image_inference", dev_dependency = True)
+test_inference.configure(dependency_attributes = [
+    "deps",
+    "src",
+    "actual",
+    "venv",
+    "srcs",
+])

@@ -1,1 +1,72 @@
-# Reserved for the runnable example described in //:README.md.
+load("@rules_layer_optimizer//python:defs.bzl", "pip_layer_reducer")
+load("@rules_layer_optimizer//python:inference.bzl", "apt_inference", "inferred_apt_deps", "inferred_layers", "layer_inference")
+load("//:archive_test.bzl", "archive_test")
+load(":inference_test.bzl", "inference_test")
+load(":sharing_test.bzl", "sharing_test")
+
+filegroup(
+    name = "first",
+    srcs = ["@packages//colorama"],
+)
+
+filegroup(
+    name = "second",
+    srcs = ["@packages//colorama"],
+)
+
+pip_layer_reducer(
+    name = "first_layers",
+    deps = [":first"],
+)
+
+pip_layer_reducer(
+    name = "second_layers",
+    deps = [":second"],
+)
+
+sharing_test(
+    name = "sharing_test",
+    other = ":second_layers",
+    target_under_test = ":first_layers",
+)
+
+archive_test(
+    name = "wheel_contents_test",
+    archive = ":first_layers",
+    contains = [
+        "colorama/__init__.py",
+        "colorama-0.4.6.dist-info/METADATA",
+        "colorama-0.4.6.dist-info/RECORD",
+    ],
+)
+
+layer_inference(
+    name = "package_runtime",
+    for_deps = ["@packages//colorama"],
+    layers = ["//basic_layers:first"],
+)
+
+inferred_layers(
+    name = "runtime_layers",
+    inferences = [":package_runtime"],
+    deps = [":first"],
+)
+
+apt_inference(
+    name = "apt_runtime",
+    for_deps = ["@packages//colorama"],
+    tars = ["//basic_layers:first"],
+)
+
+inferred_apt_deps(
+    name = "apt_layers",
+    inferences = [":apt_runtime"],
+    deps = [":first"],
+)
+
+inference_test(
+    name = "inference_test",
+    apt = ":apt_layers",
+    expected = "//basic_layers:first",
+    target_under_test = ":runtime_layers",
+)

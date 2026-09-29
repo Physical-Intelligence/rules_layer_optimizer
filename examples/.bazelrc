@@ -1,1 +1,3 @@
 import %workspace%/../.bazelrc
+
+build --@packages//dep_group=layer-optimizer-examples
