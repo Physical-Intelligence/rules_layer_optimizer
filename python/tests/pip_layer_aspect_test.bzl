@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//python/private:aspect_rules_py.bzl", "wheel_identity", "wheel_package")
 load("//python/private:pip_deps.bzl", "PipDepsInfo", "merge_pip_deps")
-load("//python/private:pip_layer_aspect.bzl", "PipLayerArtifactsInfo", "merge_pip_package_tars")
+load("//python/private:pip_layer_artifacts.bzl", "PipLayerArtifactsInfo", "merge_pip_package_tars")
 
 def _whl_install_package_test_impl(ctx):
     env = unittest.begin(ctx)

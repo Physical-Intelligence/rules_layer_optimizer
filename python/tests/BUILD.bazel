@@ -24,3 +24,16 @@ py_test(
 )
 
 pip_layer_aspect_test_suite(name = "pip_layer_aspect_test")
+
+py_test(
+    name = "rules_python_split_test",
+    srcs = ["rules_python_split_test.py"],
+    data = [
+        "//python/private:rules_python_split.awk",
+        "@gawk",
+    ],
+    env = {
+        "GAWK": "$(rootpath @gawk)",
+        "SPLIT_AWK": "$(rootpath //python/private:rules_python_split.awk)",
+    },
+)

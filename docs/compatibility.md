@@ -14,11 +14,18 @@ The examples use only public dependencies, without monopi patches or overrides.
   a compatible resolver or an existing v2 lock. APT adapter tests use a synthetic
   package repository matching the public `:data` contract, not live APT resolution.
 - `aspect_bazel_lib` 2.22.0 supplies tar/mtree actions; gawk is a declared dependency.
-- The Python image example uses `rules_oci` 2.2.6. Output tars can be composed by
-  other OCI rule sets; rules_img integration has not been tested in this extraction.
+- `rules_python` 1.9.0: package layers use the pip-generated `pypi_name` tags,
+  wheel-owned runfiles, and the binary's public PyRuntimeInfo. Tested with script
+  bootstrap and an in-build Python 3.12 interpreter. The standalone consumer
+  registers no aspect_rules_py toolchains and uses explicit package sizes.
+- `rules_oci` 2.2.6 and `rules_img` 0.3.22: both accept optimized tar outputs
+  directly. CI builds and runs both Python rule families against both image
+  backends, checks identical layer digests/order, and verifies inferred config.
+  No image backend is imposed on the optimizer or Python adapters.
 
 Python layers use `/app` and `/app.runfiles` as their shared image paths. The
-caller supplies the interpreter tar and execution toolchain. No interpreter
+aspect_rules_py caller supplies the interpreter tar and execution toolchain;
+rules_python uses the binary's selected runtime. No interpreter
 pruning, Ubuntu base policy, registry destinations, or deployment integration
 is included. The example chooses a digest-pinned Ubuntu base and an x86-64
 interpreter explicitly.

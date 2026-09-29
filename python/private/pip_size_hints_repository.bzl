@@ -68,6 +68,26 @@ def parse_uv_lock_size_hints(lock_content, size_overrides = {}):
         wheel_sizes = wheel_sizes,
     )
 
+def parse_pip_size_overrides(size_overrides):
+    """Create size hints without requiring a uv lockfile.
+
+    Args:
+        size_overrides: Distribution names mapped to positive size strings.
+
+    Returns:
+        Size metadata with package estimates and no exact wheel sizes.
+    """
+    sizes = {}
+    for package, raw_size in size_overrides.items():
+        normalized = _normalize_package(package)
+        size = int(raw_size)
+        if size <= 0:
+            fail("pip size override for {} must be positive, got {}".format(package, raw_size))
+        if normalized in sizes and sizes[normalized] != size:
+            fail("conflicting pip size overrides for " + normalized)
+        sizes[normalized] = size
+    return struct(package_overrides = sizes, package_sizes = sizes, wheel_sizes = {})
+
 def render_pip_size_hint_bzl(size_hints):
     """Renders the generated `pip_pkg_size_hint.bzl` file content.
 

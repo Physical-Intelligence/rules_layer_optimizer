@@ -15,23 +15,11 @@ load("@aspect_bazel_lib//lib:tar.bzl", "tar_lib")
 load("@oci_image_inference_config//:config.bzl", "DEPENDENCY_ATTRIBUTES")
 load("//python/private:aspect_rules_py.bzl", "selected_wheel_filename", "wheel_identity", "wheel_package", "wheel_record", "wheel_runfiles_prefix")
 load("//python/private:pip_deps.bzl", "PipDepsInfo", "merge_pip_deps")
+load("//python/private:pip_layer_artifacts.bzl", "PipLayerArtifactsInfo", "merge_pip_package_tars", _validate_package_source = "validate_package_source")
 load("//python/private:pip_utils.bzl", "pip_package_size_hint", "pip_wheel_size_hint", "sorted_by_size_hint")
 
 _GAWK = Label("@gawk")
 _PIP_LAYER_MTREE_AWK = Label("//python/private:pip_layer_mtree.awk")
-
-PipLayerArtifactsInfo = provider(
-    doc = "Per-package pip tars produced by pip_layer_aspect.",
-    fields = {
-        "package_tars": "Dict mapping normalized distribution name -> struct(tar=File, size_bytes=int, group=str|None, source=str).",
-    },
-)
-
-def merge_pip_package_tars(package_tars, additions, owner):
-    """Merge package tars, rejecting ambiguous distribution identities."""
-    for package, info in additions.items():
-        _validate_package_source(package_tars, package, info.source, owner)
-        package_tars[package] = info
 
 _KEEP_KINDS = ["py_library", "py_binary", "whl_install", "alias"]
 
@@ -234,13 +222,3 @@ pip_layer_aspect = aspect(
     provides = [PipDepsInfo, PipLayerArtifactsInfo],
     toolchains = [tar_lib.toolchain_type],
 )
-
-def _validate_package_source(package_tars, package, source, owner):
-    previous = package_tars.get(package)
-    if previous != None and previous.source != source:
-        fail("{} reaches multiple wheels for pip distribution '{}': {} and {}".format(
-            owner,
-            package,
-            previous.source,
-            source,
-        ))

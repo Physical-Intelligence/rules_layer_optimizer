@@ -55,3 +55,23 @@ oci.pull(
     platforms = ["linux/amd64"],
 )
 use_repo(oci, "ubuntu", "ubuntu_linux_amd64")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pip",
+    python_version = "3.12",
+    requirements_lock = "//:requirements.txt",
+)
+use_repo(pip, "pip")
+
+bazel_dep(name = "rules_img", version = "0.3.22")
+
+images = use_extension("@rules_img//img:extensions.bzl", "images")
+images.pull(
+    name = "img_ubuntu",
+    digest = "sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3",
+    layer_handling = "eager",
+    registry = "index.docker.io",
+    repository = "library/ubuntu",
+)
+use_repo(images, "rules_img_images.bzl")

@@ -9,7 +9,9 @@ def _archive_test_impl(ctx):
     lines = ["#!/usr/bin/env bash", "set -euo pipefail", 'cd "$TEST_SRCDIR/$TEST_WORKSPACE"', '"{}" -tf "{}" > "$TEST_TMPDIR/entries"'.format(tar.short_path, ctx.file.archive.short_path)]
     for expected in ctx.attr.contains:
         lines.append("grep -F -- '{}' \"$TEST_TMPDIR/entries\"".format(expected))
+    for excluded in ctx.attr.excludes:
+        lines.append("if grep -F -- '{}' \"$TEST_TMPDIR/entries\"; then exit 1; fi".format(excluded))
     ctx.actions.write(script, "\n".join(lines) + "\n", is_executable = True)
     return [DefaultInfo(executable = script, runfiles = ctx.runfiles(files = [ctx.file.archive], transitive_files = toolchain.default.files))]
 
-archive_test = rule(implementation = _archive_test_impl, test = True, attrs = {"archive": attr.label(allow_single_file = True), "contains": attr.string_list()}, toolchains = [tar_lib.toolchain_type])
+archive_test = rule(implementation = _archive_test_impl, test = True, attrs = {"archive": attr.label(allow_single_file = True), "contains": attr.string_list(), "excludes": attr.string_list()}, toolchains = [tar_lib.toolchain_type])

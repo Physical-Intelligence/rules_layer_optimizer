@@ -1,4 +1,26 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
 filegroup(
     name = "library_readme",
     srcs = ["@rules_layer_optimizer//:README.md"],
 )
+
+[
+    py_test(
+        name = backend + "_backend_test",
+        srcs = ["backend_equivalence_test.py"],
+        args = [
+            "$(rootpath //" + backend + ":image)",
+            "$(rootpath //" + backend + ":img_layout)",
+        ],
+        data = [
+            "//" + backend + ":image",
+            "//" + backend + ":img_layout",
+        ],
+        main = "backend_equivalence_test.py",
+    )
+    for backend in [
+        "python_image",
+        "rules_python_image",
+    ]
+]

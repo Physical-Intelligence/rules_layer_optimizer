@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load(
     "//python/private:pip_size_hints_repository.bzl",
+    "parse_pip_size_overrides",
     "parse_uv_lock_size_hints",
     "render_pip_size_hint_bzl",
 )
@@ -10,6 +11,10 @@ load(
 def _parse_uv_lock_test_impl(ctx):
     """Validate the uv.lock parsing behavior used by the repository rule."""
     env = unittest.begin(ctx)
+    explicit = parse_pip_size_overrides({"A...Pkg--Name": "101"})
+    asserts.equals(env, {"a_pkg_name": 101}, explicit.package_sizes)
+    asserts.equals(env, explicit.package_sizes, explicit.package_overrides)
+    asserts.equals(env, {}, explicit.wheel_sizes)
 
     size_hints = parse_uv_lock_size_hints("""
 [[package]]

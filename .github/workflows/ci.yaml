@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: ['.', examples, e2e/smoke]
+        module: ['.', examples, e2e/smoke, e2e/rules_python]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
@@ -40,11 +40,22 @@ jobs:
       - run: bazel test //...
         working-directory: ${{ matrix.module }}
       - if: matrix.module == 'examples'
-        run: bazel test //python_image:layers_test //shared_dependencies:sharing_test //shared_dependencies:wheel_contents_test
+        run: >-
+          bazel test //python_image:layers_test
+          //shared_dependencies:sharing_test //shared_dependencies:wheel_contents_test
+          //:python_image_backend_test //:rules_python_image_backend_test
+          //rules_python_image:sharing_test //rules_python_image:source_contents_test
+          //rules_python_image:wheel_contents_test
         working-directory: examples
       - if: matrix.module == 'examples'
-        name: Run the example image
+        name: Run both Python adapters with both image backends
         working-directory: examples
         run: |
           bazel run //python_image:load
           docker run --rm --network none rules-layer-optimizer-example:local | grep -F 'hello from reusable layers'
+          bazel run //python_image:img_load
+          docker run --rm --network none rules-layer-optimizer-aspect-img:local | grep -F 'hello from reusable layers'
+          bazel run //rules_python_image:load
+          docker run --rm --network none rules-layer-optimizer-rules-python:local | grep -F 'hello from reusable layers'
+          bazel run //rules_python_image:img_load
+          docker run --rm --network none rules-layer-optimizer-rules-python-img:local | grep -F 'hello from reusable layers'

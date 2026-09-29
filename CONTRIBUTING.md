@@ -15,6 +15,7 @@ pre-commit run --all-files
 bazel test //...
 (cd examples && bazel test //...)
 (cd e2e/smoke && bazel test //...)
+(cd e2e/rules_python && bazel test //...)
 ```
 
 The root contains focused unit and analysis tests. The examples module builds

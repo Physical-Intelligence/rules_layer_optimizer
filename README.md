@@ -18,19 +18,22 @@ published release. No releases or registry publication are enabled.
 | `//inference:defs.bzl` | Exact-label layer and environment inference |
 | `//inference:extensions.bzl` | Root-module graph and package-size configuration |
 | `//apt:defs.bzl` | `apt_inference`, `inferred_apt_deps` |
-| `//python:defs.bzl` | `py_image_layer`, `pip_layer_reducer`, source bucket helpers |
+| `//python:aspect_rules_py.bzl` | aspect_rules_py layers and source bucket helpers (`defs.bzl` alias) |
+| `//python:rules_python.bzl` | rules_python interpreter, package, and source layers |
 | `//python:inference.bzl` | Pip-aware layer, APT, and environment inference |
 
 ## Try it locally
 
 The [examples module](examples/README.md) is a standalone consumer using
 `local_path_override`. It includes tar optimization, a Python OCI image, and
-package-sharing checks.
+package-sharing checks. Both Python adapters are tested with rules_oci and
+rules_img.
 
 ```sh
 bazel test //...
 (cd examples && bazel test //...)
 (cd e2e/smoke && bazel test //...)
+(cd e2e/rules_python && bazel test //...)
 ```
 
 Start with [configuration](docs/configuration.md) and the capability docs:

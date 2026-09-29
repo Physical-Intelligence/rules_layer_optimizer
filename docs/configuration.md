@@ -16,15 +16,26 @@ inference.configure(dependency_attributes = ["deps", "src", "srcs", "actual", "v
 use_repo(inference, "oci_image_inference_config")
 ```
 
-To enable Python package identities, add `pip_hub = "@packages//:defs.bzl"` to
-`configure`, and add `inference.pip_size_hint(lock = "//:uv.lock")`. The Python
-adapter currently uses aspect_rules_py 2.0.0-alpha.4. Configure its uv hub and
-Python toolchain in the consumer module; see the complete examples module.
+To enable Python package identities, configure the hub used for inference labels:
 
-The selected wheel's filename chooses its compressed size from `uv.lock`.
-For source-built wheels or indexes omitting sizes, provide positive byte values
-as strings in `pip_size_hint(size_overrides = {"distribution_name": "1234"})`.
-An override is a fallback, not a replacement for known selected-wheel metadata.
+- aspect_rules_py: `pip_hub = "@packages//:defs.bzl"`
+- rules_python: `pip_hub = "@pip//:requirements.bzl"`
+
+Configure exactly one `inference.pip_size_hint` tag. A uv lock works with either
+adapter: `inference.pip_size_hint(lock = "//:uv.lock")`. aspect_rules_py selects
+an exact wheel size by filename. rules_python uses the largest available wheel
+size for each distribution, since its py_library does not expose that filename.
+
+Consumers using requirements.txt without uv can provide estimates directly:
+
+```starlark
+inference.pip_size_hint(size_overrides = {"colorama": "25335"})
+```
+
+Values must be positive byte counts, supplied as strings. With a uv lock,
+overrides are limited to source-built or unsized packages and act as fallbacks
+for exact wheel sizes. Without a lock, they supply all package size estimates.
+See the [standalone rules_python module](../e2e/rules_python/MODULE.bazel).
 
 APT hints come from caller-supplied rules_distroless v2 locks:
 

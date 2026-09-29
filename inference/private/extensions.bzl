@@ -4,7 +4,7 @@
 load("//apt/private:apt_size_hints.bzl", "parse_apt_lock_size_hints", "render_apt_size_hints_bzl")
 
 # buildifier: disable=bzl-visibility
-load("//python/private:pip_size_hints_repository.bzl", "parse_uv_lock_size_hints", "render_pip_size_hint_bzl")
+load("//python/private:pip_size_hints_repository.bzl", "parse_pip_size_overrides", "parse_uv_lock_size_hints", "render_pip_size_hint_bzl")
 
 def _inference_config_repository_impl(rctx):
     rctx.file("BUILD.bazel", "exports_files([\"config.bzl\"])\n")
@@ -23,11 +23,7 @@ def _inference_config_repository_impl(rctx):
     pip_size_hints = parse_uv_lock_size_hints(
         rctx.read(rctx.attr.pip_lock),
         rctx.attr.pip_size_overrides,
-    ) if rctx.attr.pip_lock else struct(
-        package_overrides = {},
-        package_sizes = {},
-        wheel_sizes = {},
-    )
+    ) if rctx.attr.pip_lock else parse_pip_size_overrides(rctx.attr.pip_size_overrides)
 
     rctx.file(
         "config.bzl",
@@ -107,6 +103,9 @@ def _oci_image_inference_impl(module_ctx):
     if not configurations[0].pip_hub and pip_size_hints:
         fail("A pip size hint requires configure.pip_hub")
 
+    if pip_size_hints and not pip_size_hints[0].lock and not pip_size_hints[0].size_overrides:
+        fail("pip_size_hint requires a lock or explicit size_overrides")
+
     _inference_config_repository(
         name = "oci_image_inference_config",
         apt_dependency_sets = [hint.dependency_set for hint in apt_size_hints],
@@ -132,7 +131,7 @@ oci_image_inference = module_extension(
             "pip_hub": attr.label(),
         }),
         "pip_size_hint": tag_class(attrs = {
-            "lock": attr.label(allow_single_file = [".lock"], mandatory = True),
+            "lock": attr.label(allow_single_file = [".lock"]),
             "size_overrides": attr.string_dict(),
         }),
     },

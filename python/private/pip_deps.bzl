@@ -8,6 +8,7 @@ load("@oci_image_inference_config//:config.bzl", "DEPENDENCY_ATTRIBUTES")
 load("//inference/private:dependency_inference.bzl", "DependencyKeyInfo")
 load("//python/private:aspect_rules_py.bzl", "wheel_identity", "wheel_package")
 load("//python/private:pip_utils.bzl", "pip_inference_key", "pip_package_size_hint", "sorted_by_size_hint")
+load("//python/private:rules_python_wheel.bzl", rules_python_package = "wheel_package")
 
 PipDepsInfo = provider(
     "Pip deps info",
@@ -64,10 +65,10 @@ def _pip_deps_aspect_impl(target, ctx):
     pip_sources = {}
 
     if ctx.rule.kind in ["py_library", "py_binary", "whl_install", "alias"]:
-        package = wheel_package(target.label)
+        package = wheel_package(target.label) or rules_python_package(ctx)
         if package != None:
             pip_deps[package] = pip_package_size_hint(package)
-            pip_sources[package] = wheel_identity(target.label)
+            pip_sources[package] = wheel_identity(target.label) or "@@" + target.label.repo_name
 
     # Propagate pip deps from our dependencies.
     for attr_name in DEPENDENCY_ATTRIBUTES:

@@ -12,10 +12,10 @@ load("@aspect_bazel_lib//lib:tar.bzl", "mtree_spec", "tar", "tar_lib")
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 
 # buildifier: disable=bzl-visibility
-load("//layers/private:layer_groups.bzl", "LayerTarsInfo", "SizeHintInfo")
-load("//python/private:pip_deps.bzl", "PipDepsInfo", "merge_pip_deps")
-load("//python/private:pip_layer_aspect.bzl", "PipLayerArtifactsInfo", "merge_pip_package_tars", "pip_layer_aspect")
-load("//python/private:pip_utils.bzl", "sorted_by_size_hint")
+load("//layers/private:layer_groups.bzl", "LayerTarsInfo")
+load("//python/private:mtree_symlinks.bzl", "preserve_mtree_symlinks")
+load("//python/private:pip_layer_aspect.bzl", "pip_layer_aspect")
+load("//python/private:pip_layer_reducer.bzl", "make_pip_layer_reducer")
 load("//python/private:pyo3_layer_aspect.bzl", "Pyo3ArtifactsInfo", "pyo3_layer_aspect")
 load("//python/private:repository_paths.bzl", "module_extension_repo_pattern")
 load("//python/private:source_dep_buckets.bzl", "source_dep_bucket_matches_file")
@@ -100,58 +100,7 @@ def _safe_layer_name(label):
         name = name.replace(char, "_")
     return name.strip("_")
 
-def _pip_layer_reducer_impl(ctx):
-    """Reduces `PipLayerArtifactsInfo` from `pip_layer_aspect` into size hints.
-
-    The aspect emits one tar per pip package at that package's own
-    namespace (action-deduped across binaries); this rule walks the
-    transitive provider and exposes every package tar with its generated size
-    hint. The optimizer owns the threshold decision so it can raise the
-    effective cutoff when the final image-wide layer budget would be exceeded.
-
-    Candidate tars are sorted largest-first so they appear first in the
-    consuming image when retained as individual layers. That also makes the
-    smallest candidates the first ones folded into the flat pip layer when
-    either the static threshold or dynamic layer budget requires it.
-    """
-    package_tars = {}
-    pip_deps = {}
-    pip_sources = {}
-    for dep in ctx.attr.deps:
-        if PipLayerArtifactsInfo in dep:
-            merge_pip_package_tars(package_tars, dep[PipLayerArtifactsInfo].package_tars, ctx.label)
-        if PipDepsInfo in dep:
-            merge_pip_deps(pip_deps, pip_sources, dep[PipDepsInfo], ctx.label)
-
-    candidate_entries = []
-    file_sizes = {}
-    for normalized_label, info in sorted(package_tars.items()):
-        candidate_entries.append((info.size_bytes, normalized_label, info.tar))
-        file_sizes[info.tar] = info.size_bytes
-
-    candidate_entries = sorted(candidate_entries, key = lambda x: (-x[0], x[1]))
-    candidate_files = [tar_file for _, _, tar_file in candidate_entries]
-
-    return [
-        DefaultInfo(files = depset(candidate_files)),
-        LayerTarsInfo(tars = candidate_files),
-        SizeHintInfo(sizes = file_sizes),
-        PipLayerArtifactsInfo(package_tars = package_tars),
-        PipDepsInfo(
-            pip_deps = pip_deps,
-            pip_sources = pip_sources,
-            sorted_pip_deps = sorted_by_size_hint(pip_deps),
-        ),
-    ]
-
-pip_layer_reducer = rule(
-    doc = "Collects per-package pip tars (from `pip_layer_aspect`) and exposes size hints.",
-    implementation = _pip_layer_reducer_impl,
-    attrs = {
-        "deps": attr.label_list(aspects = [pip_layer_aspect]),
-    },
-    provides = [DefaultInfo, LayerTarsInfo, SizeHintInfo, PipLayerArtifactsInfo, PipDepsInfo],
-)
+pip_layer_reducer = make_pip_layer_reducer(pip_layer_aspect)
 
 # Match the canonical repository spellings used by supported Python toolchains.
 _INTERPRETER_REGEX = r"\\.runfiles/({}|{}).*".format(
@@ -163,70 +112,6 @@ _PACKAGES_REGEX = r"\\.runfiles/({}|{}).*".format(
     module_extension_repo_pattern("aspect_rules_py", "uv", "whl_install__"),
 )
 _ASPECT_RULES_PY_UV_REGEX = module_extension_repo_pattern("aspect_rules_py", "uv")
-
-_PRESERVE_SYMLINKS_PY = """\
-import os
-import re
-import sys
-
-mtree, out = sys.argv[1:3]
-with open(mtree, encoding="utf-8") as src, open(out, "w", encoding="utf-8") as dst:
-    for line in src:
-        row = line.rstrip("\\n")
-        if " type=file " in row and " content=" in row:
-            entry = row.partition(" ")[0]
-            before, after = row.rsplit(" content=", 1)
-            content, separator, rest = after.partition(" ")
-            link = None
-            generated_venv_entry = re.search(r"/[.][^/]*(?:[.]venv|_venv)/", entry)
-            if generated_venv_entry and "/_wheels/" not in entry:
-                link = os.readlink(content) if os.path.islink(content) else None
-            if link and not os.path.isabs(link):
-                before = before.replace(" type=file ", " type=link ", 1)
-                before = re.sub(r" nlink=[^ ]+", "", before, count=1)
-                row = f"{before} link={link}"
-                if separator:
-                    row = f"{row} {rest}"
-        dst.write(row + "\\n")"""
-
-def _preserve_mtree_symlinks_impl(ctx):
-    out = ctx.actions.declare_file(ctx.label.name + ".spec")
-    transitive_inputs = [ctx.attr.mtree[DefaultInfo].files]
-    for src in ctx.attr.srcs:
-        transitive_inputs.append(src[DefaultInfo].files)
-        transitive_inputs.append(src[DefaultInfo].default_runfiles.files)
-
-    script = ctx.actions.declare_file(ctx.label.name + ".preserve_symlinks.py")
-    ctx.actions.write(output = script, content = _PRESERVE_SYMLINKS_PY)
-
-    # The toolchain interpreter rather than a bare `python3`: the latter is
-    # resolved off the action PATH and is outside the ActionKey. This filter
-    # stays on Python rather than gawk because it needs `os.readlink`.
-    py_toolchain = ctx.attr.python_toolchain
-    python3 = py_toolchain[platform_common.TemplateVariableInfo].variables["PYTHON3"]
-    ctx.actions.run(
-        executable = python3,
-        inputs = depset(direct = [script], transitive = transitive_inputs),
-        tools = [py_toolchain[DefaultInfo].files],
-        outputs = [out],
-        arguments = [script.path, ctx.file.mtree.path, out.path],
-        mnemonic = "PyImageLayerPreserveSymlinks",
-        progress_message = "Preserving symlinks in %s mtree" % ctx.label,
-    )
-
-    return [DefaultInfo(files = depset([out]))]
-
-_preserve_mtree_symlinks = rule(
-    implementation = _preserve_mtree_symlinks_impl,
-    attrs = {
-        "mtree": attr.label(allow_single_file = True, mandatory = True),
-        "srcs": attr.label_list(allow_files = True),
-        "python_toolchain": attr.label(
-            mandatory = True,
-            cfg = "exec",
-        ),
-    },
-)
 
 def _split_mtree_source_impl(ctx):
     """Extracts the source-only mtree spec from the binary's runfiles.
@@ -503,7 +388,7 @@ def _expand_data_driven(
         **kwargs
     )
 
-    _preserve_mtree_symlinks(
+    preserve_mtree_symlinks(
         name = name + ".manifest",
         mtree = name + ".manifest.raw",
         python_toolchain = python_toolchain,
