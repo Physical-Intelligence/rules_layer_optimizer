@@ -1,8 +1,6 @@
 # rules_layer_optimizer
 
-Bazel building blocks for dependency inference, reusable package layers, and
-size-aware OCI layer optimization. Use these building blocks to create your own
-efficient `py_image` macro.
+This Bazel ruleset provides building blocks for creating optimized application OCI images based on an executable entrypoint, e.g. a `py_binary` target. It provides dependency inference, reusable package layers, and size-aware OCI layer optimization. It provides everything you need to create your own efficient `py_image` macro.
 
 ## Building blocks
 
@@ -18,7 +16,7 @@ efficient `py_image` macro.
 | `//python:rules_python.bzl` | `py_image_layer`, `pip_layer_reducer` | Split rules_python binaries into interpreter, package, and source layers |
 | `//python:inference.bzl` | `layer_inference`, `inferred_layers`, `apt_inference`, `inferred_apt_deps`, `env_inference`, `env_file` | Select layers, APT packages, and environment variables from Python dependencies |
 
-## Get started
+## How to use it
 
 Add the dependency to your `MODULE.bazel`:
 
@@ -26,7 +24,19 @@ Add the dependency to your `MODULE.bazel`:
 bazel_dep(name = "rules_layer_optimizer", version = "0.1.0")
 ```
 
-Given tar-producing targets, group and optimize them in `BUILD.bazel`:
+Then, there are 3 basic steps. Each stage is modular, so hand-rolled replacements work fine too.
+
+### 1. Produce layer candidates with size hints
+
+This is the step with the most variability, as it depends on which dependencies your repo uses (`rules_oci` | `rules_img`, and `rules_python` | `aspect_rules_py`). Regardless of your choices, the goal remains the same: produce candidate image layers that are efficient and also accompanied by size hints via the `SizeHintInfo` provider:
+
+```starlark
+TODO
+```
+
+### 2. Optimize the layers
+
+From the layer candidates, group and optimize them with `optimized_layers`. Note that `SizeHintInfo` is not required on all candidates, the rule will use the hints when available but they only matter for groups where in-group reordering and flattening is desired:
 
 ```starlark
 load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
@@ -45,21 +55,19 @@ optimized_layers(
 )
 ```
 
-Inputs with size hints compete for individual layers; unsized inputs are combined
-into the group's overflow layer. Only group archives that are safe to reorder.
-Pass `:layers` to `oci_image(tars = [...])` or `image_manifest(layers = [...])`.
-The [basic example](examples/basic_layers/BUILD.bazel) includes actual tar producers.
+### 3. Build the image
 
-See [layers](layers/README.md) for ordering and the API reference,
-[Python](python/README.md) for binary layer producers, and
-[configuration](docs/configuration.md) for optional inference and size metadata.
-For installation from an archive, see [release preparation](.bcr/README.md).
+The output of `optimized_layers` can be fed directly into `oci_image` or `image_manifest`:
+
+```starlark
+TODO
+```
 
 ## Try it locally
 
 The [examples module](examples/README.md) demonstrates tar optimization, Python OCI images, and
-package-sharing checks. Both Python adapters are tested with rules_oci and
-rules_img.
+package-sharing checks. Both Python adapters are tested with `rules_oci` and
+`rules_img`.
 
 ```sh
 bazel test //...
