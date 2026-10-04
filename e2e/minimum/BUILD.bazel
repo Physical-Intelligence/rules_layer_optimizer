@@ -1,1 +1,1 @@
-../../examples/BUILD.bazel
+../image_backends/BUILD.bazel

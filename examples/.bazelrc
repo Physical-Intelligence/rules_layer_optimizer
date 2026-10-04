@@ -1,5 +1,0 @@
-import %workspace%/../.bazelrc
-
-build --@packages//dep_group=layer-optimizer-examples
-
-build --@rules_python//python/config_settings:bootstrap_impl=script

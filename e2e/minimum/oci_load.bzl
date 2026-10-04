@@ -1,1 +1,1 @@
-../../examples/oci_load.bzl
+../image_backends/oci_load.bzl

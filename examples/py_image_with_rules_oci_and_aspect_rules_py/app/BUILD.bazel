@@ -1,0 +1,45 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_test")
+load("@rules_oci//oci:defs.bzl", "oci_load")
+load("//shared:interpreter.bzl", "interpreter_runfiles_dir")
+load("//shared:py_image.bzl", "py_image")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    deps = [
+        "@pip//backports_strenum",
+        "@pip//backports_tarfile",
+        "@pip//colorama",
+        "@pip//google_crc32c",
+    ],
+)
+
+py_image(
+    name = "image",
+    binary = ":app",
+)
+
+py_test(
+    name = "image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = [
+        "$(rootpath :load)",
+        "/" + interpreter_runfiles_dir() + "/bin/python3",
+    ],
+    data = [":load"],
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["rules-layer-optimizer-py-image:local"],
+)
+
+write_source_files(
+    name = "write_optimization_plan",
+    files = {"optimization_plan.json": ":image_optimized_optimization_plan"},
+)

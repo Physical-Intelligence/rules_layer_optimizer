@@ -1,0 +1,48 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@rules_img//img:load.bzl", "image_load")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("//shared:interpreter.bzl", "interpreter_runfiles_dir")
+load("//shared:py_image.bzl", "py_image")
+
+py_binary(
+    name = "app",
+    srcs = ["app.py"],
+    legacy_create_init = False,
+    deps = [
+        "@pip//backports_strenum",
+        "@pip//backports_tarfile",
+        "@pip//colorama",
+        "@pip//google_crc32c",
+    ],
+)
+
+py_image(
+    name = "image",
+    binary = ":app",
+)
+
+py_test(
+    name = "image_test",
+    size = "medium",
+    srcs = ["image_test.py"],
+    args = [
+        "$(rootpath :load)",
+        "/" + interpreter_runfiles_dir() + "/bin/python3",
+    ],
+    data = [":load"],
+    legacy_create_init = False,
+    main = "image_test.py",
+    tags = ["no-sandbox"],
+)
+
+image_load(
+    name = "load",
+    image = ":image",
+    tag = "docker.io/library/rules-layer-optimizer-py-image-rules-python:local",
+)
+
+write_source_files(
+    name = "write_optimization_plan",
+    files = {"optimization_plan.json": ":image_optimized_optimization_plan"},
+)

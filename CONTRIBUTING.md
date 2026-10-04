@@ -9,16 +9,21 @@ install both hook stages:
 pre-commit install --hook-type pre-commit --hook-type pre-push
 pre-commit run --all-files
 bazel test //...
-(cd examples && bazel test //...)
+(cd examples/py_image_with_rules_oci_and_aspect_rules_py && bazel test //...)
+(cd examples/py_image_with_rules_img_and_rules_python && bazel test //...)
+(cd e2e/layer_plan && bazel test //...)
+(cd e2e/aspect_layers && bazel test //...)
+(cd e2e/rules_python_layers && bazel test //...)
+(cd e2e/image_backends && bazel test //...)
 (cd e2e/minimum && bazel test //...)
-(cd e2e/smoke && bazel test //...)
+(cd e2e/distroless && bazel test //...)
 (cd e2e/inference && bazel test //...)
 (cd e2e/rules_python && bazel test //...)
 ```
 
-The root contains focused unit and analysis tests. The examples module builds
-real package and image archives; the smoke module exercises external-repository
-inference with a small APT fixture. Behavioral tests must accompany rule changes.
+The root contains focused unit and analysis tests. The example modules build
+runnable images. Each package under `e2e/` checks one behavior. Behavioral
+tests must accompany rule changes.
 After committing changes, rehearse archive installation with
 `bazel run //tools:release -- --output /tmp/rules_layer_optimizer_release --verify`.
 This packages committed HEAD, not working-tree edits.
@@ -35,7 +40,8 @@ in that example's package, then review the full diff before committing.
 
 ## Releases
 
-Maintainers update `MODULE.bazel` and the README installation version, then push a matching
+Maintainers update `MODULE.bazel` and the README installation version, then
+push a matching
 `vX.Y.Z` tag to trigger the [Release workflow](.github/workflows/release.yaml).
 GitHub tag protection limits release tags to maintainers and administrators.
 The shared Bazel workflow verifies the archive and publishes the GitHub release

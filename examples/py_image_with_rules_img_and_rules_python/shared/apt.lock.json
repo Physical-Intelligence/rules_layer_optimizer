@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "dependency_sets": {
+    "noble": {
+      "sets": {
+        "amd64": {
+          "/noble/base-files:amd64": "13ubuntu10",
+          "/noble/bash:amd64": "5.2.21-2ubuntu4",
+          "/noble/ca-certificates:amd64": "20240203",
+          "/noble/coreutils:amd64": "9.4-3ubuntu6",
+          "/noble/gawk:amd64": "1:5.2.1-2build3",
+          "/noble/gcc-14-base:amd64": "14-20240412-0ubuntu1",
+          "/noble/grep:amd64": "3.11-4build1",
+          "/noble/libc6:amd64": "2.39-0ubuntu8",
+          "/noble/libgcc-s1:amd64": "14-20240412-0ubuntu1",
+          "/noble/libssl3t64:amd64": "3.0.13-0ubuntu3",
+          "/noble/libstdc++6:amd64": "14-20240412-0ubuntu1",
+          "/noble/netbase:amd64": "6.4",
+          "/noble/openssl:amd64": "3.0.13-0ubuntu3",
+          "/noble/sed:amd64": "4.9-2build1",
+          "/noble/tzdata:amd64": "2024a-2ubuntu1"
+        }
+      }
+    }
+  },
+  "packages": {
+    "/noble/base-files:amd64=13ubuntu10": {"name": "base-files", "size": 73634, "version": "13ubuntu10"},
+    "/noble/bash:amd64=5.2.21-2ubuntu4": {"name": "bash", "size": 794086, "version": "5.2.21-2ubuntu4"},
+    "/noble/ca-certificates:amd64=20240203": {"name": "ca-certificates", "size": 159378, "version": "20240203"},
+    "/noble/coreutils:amd64=9.4-3ubuntu6": {"name": "coreutils", "size": 1412418, "version": "9.4-3ubuntu6"},
+    "/noble/gawk:amd64=1:5.2.1-2build3": {"name": "gawk", "size": 462772, "version": "1:5.2.1-2build3"},
+    "/noble/gcc-14-base:amd64=14-20240412-0ubuntu1": {"name": "gcc-14-base", "size": 47612, "version": "14-20240412-0ubuntu1"},
+    "/noble/grep:amd64=3.11-4build1": {"name": "grep", "size": 162040, "version": "3.11-4build1"},
+    "/noble/libc6:amd64=2.39-0ubuntu8": {"name": "libc6", "size": 3264806, "version": "2.39-0ubuntu8"},
+    "/noble/libgcc-s1:amd64=14-20240412-0ubuntu1": {"name": "libgcc-s1", "size": 78484, "version": "14-20240412-0ubuntu1"},
+    "/noble/libssl3t64:amd64=3.0.13-0ubuntu3": {"name": "libssl3t64", "size": 1936306, "version": "3.0.13-0ubuntu3"},
+    "/noble/libstdc++6:amd64=14-20240412-0ubuntu1": {"name": "libstdc++6", "size": 795158, "version": "14-20240412-0ubuntu1"},
+    "/noble/netbase:amd64=6.4": {"name": "netbase", "size": 13112, "version": "6.4"},
+    "/noble/openssl:amd64=3.0.13-0ubuntu3": {"name": "openssl", "size": 1001730, "version": "3.0.13-0ubuntu3"},
+    "/noble/sed:amd64=4.9-2build1": {"name": "sed", "size": 193410, "version": "4.9-2build1"},
+    "/noble/tzdata:amd64=2024a-2ubuntu1": {"name": "tzdata", "size": 273318, "version": "2024a-2ubuntu1"}
+  }
+}

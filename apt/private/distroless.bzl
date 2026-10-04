@@ -1,9 +1,7 @@
 """rules_distroless adapter for APT package layer metadata."""
 
 load("//apt/private:apt_utils.bzl", "apt_package_size_hint")
-
-# buildifier: disable=bzl-visibility
-load("//layers/private:layer_groups.bzl", "SizeHintInfo")
+load("//layers:providers.bzl", "SizeHintInfo")
 
 def _primary_files_for_package(target, ctx):
     """Extract the primary tar exposed by a rules_distroless package target."""

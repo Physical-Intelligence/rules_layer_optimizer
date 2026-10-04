@@ -14,9 +14,9 @@ use Bazel 9.2.0. Other execution platforms are not yet claimed as supported.
 | `rules_python` | **1.9.0** | 1.9.0 |
 | `aspect_rules_py` | **2.0.0-alpha.4** | 2.0.0-alpha.4 |
 
-The minimum combination and current endpoints run the same
-[consumer tests](../examples/README.md), including all four Python/image-backend
-combinations in Docker. The [minimum module](../e2e/minimum/README.md) pins exact
+The current [image backend checks](../e2e/image_backends/README.md) and the
+[minimum module](../e2e/minimum/README.md) run all four Python/image-backend
+combinations in Docker. The minimum module pins exact
 versions with root-only overrides and verifies the resolved module graph. This
 prevents transitive version upgrades from invalidating minimum-version coverage.
 These are supported floors, not a claim that every future release has been tested.

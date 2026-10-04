@@ -1,0 +1,5 @@
+[project]
+name = "layer-optimizer-examples"
+version = "0.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["colorama==0.4.6", "google-crc32c==1.7.1", "backports.tarfile==1.2.0", "backports.strenum==1.2.8"]

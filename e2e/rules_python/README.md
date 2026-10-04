@@ -9,5 +9,5 @@ The runtime test extracts the optimized archive and executes its launcher,
 checking package imports, distribution metadata, and inferred environment. It
 also checks that the transitive `six` dependency gets its own layer without
 duplicating files across package archives.
-The [examples matrix](../../examples/README.md) additionally validates both
-image backends in Docker.
+[Image backend checks](../image_backends/README.md) additionally run both
+adapters on rules_oci and rules_img in Docker.

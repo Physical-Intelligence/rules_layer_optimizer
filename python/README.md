@@ -120,7 +120,8 @@ artifacts in descending size order and exposes `LayerTarsInfo` and `SizeHintInfo
 inference. See [configuration](../docs/configuration.md) for pip hub setup.
 
 Both adapters' tars work with rules_oci and rules_img. See the
-[aspect_rules_py example](../examples/python_image/BUILD.bazel),
-[rules_python example](../examples/rules_python_image/BUILD.bazel), and
+[rules_oci and aspect_rules_py wrapper](../examples/py_image_with_rules_oci_and_aspect_rules_py/app/BUILD.bazel),
+[rules_img and rules_python wrapper](../examples/py_image_with_rules_img_and_rules_python/app/BUILD.bazel),
+[image backend checks](../e2e/image_backends/README.md), and
 [standalone rules_python consumer](../e2e/rules_python/README.md).
 [Compatibility](../docs/compatibility.md) lists tested upstream versions.

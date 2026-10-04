@@ -1,0 +1,74 @@
+module(name = "rules_layer_optimizer_py_image_rules_python")
+
+bazel_dep(name = "rules_layer_optimizer")
+local_path_override(
+    module_name = "rules_layer_optimizer",
+    path = "../..",
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "rules_distroless", version = "0.9.4")
+bazel_dep(name = "rules_img", version = "0.3.22")
+bazel_dep(name = "rules_python", version = "1.9.0")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.12")
+python.toolchain(python_version = "3.12")
+use_repo(python, "python_3_12_x86_64-unknown-linux-gnu")
+
+apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
+apt.sources_list(
+    architectures = ["amd64"],
+    components = ["main"],
+    suites = ["noble"],
+    types = ["deb"],
+    uris = ["https://snapshot.ubuntu.com/ubuntu/20240601T000000Z"],
+)
+apt.install(
+    dependency_set = "noble",
+    packages = [
+        "base-files",
+        "bash",
+        "ca-certificates",
+        "coreutils",
+        "gawk",
+        "grep",
+        "libssl3t64",
+        "libstdc++6",
+        "netbase",
+        "openssl",
+        "sed",
+        "tzdata",
+    ],
+    suites = ["noble"],
+)
+apt.lock(into = "//shared:apt.lock.json")
+use_repo(apt, "noble")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    enable_implicit_namespace_pkgs = True,
+    hub_name = "pip",
+    python_version = "3.12",
+    requirements_lock = "//:requirements.txt",
+)
+use_repo(pip, "pip")
+
+inference = use_extension("@rules_layer_optimizer//inference:extensions.bzl", "oci_image_inference")
+inference.configure(
+    dependency_attributes = [
+        "deps",
+        "src",
+        "srcs",
+        "actual",
+        "venv",
+    ],
+    pip_hub = "@pip//:requirements.bzl",
+)
+inference.pip_size_hint(lock = "//:uv.lock")
+inference.apt_size_hint(
+    dependency_set = "noble",
+    lock = "//shared:apt.lock.json",
+    repository = "@noble//:dpkg_status",
+)
+use_repo(inference, "oci_image_inference_config")

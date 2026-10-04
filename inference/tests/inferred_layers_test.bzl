@@ -2,9 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//inference/private:inferred_layers.bzl", "inferred_layers", "layer_inference", "layer_inference_bundle")
-
-# buildifier: disable=bzl-visibility
-load("//layers/private:layer_groups.bzl", "LayerTarsInfo", "SizeHintInfo")
+load("//layers:providers.bzl", "LayerTarsInfo", "SizeHintInfo")
 
 def inferred_layers_test_suite(name):
     """Declare generic layer inference subjects and their analysis test.

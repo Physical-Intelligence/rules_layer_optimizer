@@ -1,8 +1,8 @@
 """Helpers that turn `uv.lock` into pip package size hints.
 
 The OCI image layer optimizer needs package sizes during Bazel analysis, not
-during execution. The OCI inference module extension calls these helpers while
-generating its analysis-time configuration repository.
+during execution. `pip_size_hints_repository` reads the lock while generating
+the analysis-time size-hint file.
 """
 
 load("@toml.bzl//:toml.bzl", "toml")
@@ -133,6 +133,22 @@ def render_pip_size_hint_bzl(size_hints):
 
     lines.append("}")
     return "\n".join(lines) + "\n"
+
+def _pip_size_hints_repository_impl(rctx):
+    if rctx.attr.lock:
+        size_hints = parse_uv_lock_size_hints(rctx.read(rctx.attr.lock), rctx.attr.size_overrides)
+    else:
+        size_hints = parse_pip_size_overrides(rctx.attr.size_overrides)
+    rctx.file("BUILD.bazel", "exports_files([\"size_hints.bzl\"])\n")
+    rctx.file("size_hints.bzl", render_pip_size_hint_bzl(size_hints))
+
+pip_size_hints_repository = repository_rule(
+    implementation = _pip_size_hints_repository_impl,
+    attrs = {
+        "lock": attr.label(allow_single_file = [".lock"]),
+        "size_overrides": attr.string_dict(),
+    },
+)
 
 def _normalize_package(package):
     normalized = []

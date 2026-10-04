@@ -1,9 +1,7 @@
 """Infer OCI image layer tars from a target's dependency graph."""
 
 load("//inference/private:dependency_inference.bzl", "dependency_graph_aspect", "dependency_identities", "inference_matches", "validate_inference_triggers")
-
-# buildifier: disable=bzl-visibility
-load("//layers/private:layer_groups.bzl", "LayerTarsInfo", "SizeHintInfo", "merge_size_hints")
+load("//layers:providers.bzl", "LayerTarsInfo", "SizeHintInfo", "merge_size_hints")
 
 LayerInferenceInfo = provider(
     "One mapping from dependency identities to OCI layer tars.",
@@ -119,10 +117,7 @@ def make_inferred_layers(dependency_aspects = []):
             "deps": attr.label_list(aspects = [dependency_graph_aspect] + dependency_aspects),
             "inferences": attr.label_list(
                 mandatory = True,
-                providers = [
-                    [LayerInferenceInfo, SizeHintInfo],
-                    [LayerInferenceBundleInfo],
-                ],
+                providers = [LayerInferenceBundleInfo],
             ),
         },
     )
@@ -144,15 +139,5 @@ def _layer_files(layer):
 def _inference_entries(inferences):
     entries = []
     for inference in inferences:
-        if LayerInferenceBundleInfo in inference:
-            entries.extend(inference[LayerInferenceBundleInfo].entries)
-        elif LayerInferenceInfo in inference:
-            entries.append(struct(
-                files = inference.files,
-                for_deps = tuple(inference[LayerInferenceInfo].for_deps),
-                for_keys = tuple(inference[LayerInferenceInfo].for_keys),
-                sizes = inference[SizeHintInfo].sizes,
-            ))
-        else:
-            fail("{} is not a layer_inference or layer_inference_bundle target".format(inference.label))
+        entries.extend(inference[LayerInferenceBundleInfo].entries)
     return entries

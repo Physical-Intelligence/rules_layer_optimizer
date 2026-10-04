@@ -1,0 +1,40 @@
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle", "layer_inference_bundle")
+load("@rules_layer_optimizer//python:inference.bzl", "apt_inference", "env_inference")
+load(":interpreter.bzl", "interpreter_layer")
+
+exports_files(["apt.lock.json"])
+
+interpreter_layer(
+    name = "python_interpreter",
+    visibility = ["//visibility:public"],
+)
+
+# Example of mapping a python package to an environment variable that will be
+# inferred by the image macro. If a py_binary transitively depends on this
+# package, the image macro will include the environment variable in the image.
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@pip//colorama"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama_env"],
+    visibility = ["//visibility:public"],
+)
+
+# Example of mapping a python package to an apt package that will be
+# inferred by the image macro. If a py_binary transitively depends on this
+# package, the image macro will include the apt package in the image.
+apt_inference(
+    name = "google_crc32c_apt",
+    for_deps = ["@pip//google_crc32c"],
+    packages = ["@noble//libstdc++6"],
+)
+
+layer_inference_bundle(
+    name = "apt_inferences",
+    inferences = [":google_crc32c_apt"],
+    visibility = ["//visibility:public"],
+)

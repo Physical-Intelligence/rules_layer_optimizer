@@ -1,49 +1,24 @@
 # Examples
 
-This separate Bazel module demonstrates the public entrypoints with complete
-dependency and image configurations.
-Run `bazel test //...` from this directory.
+These are the user-facing image examples. Each one is a separate Bazel module
+whose call site is only `name` and a `py_binary`.
 
-- [basic_layers](basic_layers/BUILD.bazel): flatten real tars and inspect the
-  archive and optimization plan.
-- [python_image](python_image/BUILD.bazel): create a Python OCI image with a
-  digest-pinned Ubuntu base, explicitly packaged interpreter, shared wheel,
-  source layer, and inferred environment. Source inspection tests build the
-  image without requiring Docker. Both rules_oci and rules_img consume the same
-  optimized tars.
-- [rules_python_image](rules_python_image/BUILD.bazel): the same image matrix
-  using rules_python, with reusable wheels and automatic interpreter splitting.
-- [shared_dependencies](shared_dependencies/BUILD.bazel): assert that two
-  consumers reach the identical wheel artifact and selected-wheel size, and
-  inspect the archive's package code and metadata.
-
-The example's `.bazelrc` selects the uv dependency group from `pyproject.toml`.
-The interpreter and base image target Linux x86-64.
-
-To load and run the image locally when Docker is available:
+- [py_image_with_rules_oci_and_aspect_rules_py](py_image_with_rules_oci_and_aspect_rules_py/app/BUILD.bazel)
+  uses rules_oci and aspect_rules_py. The [shared package](py_image_with_rules_oci_and_aspect_rules_py/shared/BUILD.bazel)
+  supplies base apt packages, the interpreter, and the inference bundles.
+- [py_image_with_rules_img_and_rules_python](py_image_with_rules_img_and_rules_python/app/BUILD.bazel)
+  uses rules_img and rules_python. The [shared package](py_image_with_rules_img_and_rules_python/shared/BUILD.bazel)
+  supplies base apt packages and the inference bundles.
 
 ```sh
-bazel run //python_image:load
-docker run --rm --network none rules-layer-optimizer-example:local
-bazel run //python_image:img_load
-docker run --rm --network none rules-layer-optimizer-aspect-img:local
-bazel run //rules_python_image:load
-docker run --rm --network none rules-layer-optimizer-rules-python:local
-bazel run //rules_python_image:img_load
-docker run --rm --network none rules-layer-optimizer-rules-python-img:local
+(cd py_image_with_rules_oci_and_aspect_rules_py && bazel test //...)
+docker run --rm --network none rules-layer-optimizer-py-image:local
+(cd py_image_with_rules_img_and_rules_python && bazel test //...)
+docker run --rm --network none rules-layer-optimizer-py-image-rules-python:local
 ```
 
-This assembly is an example of caller-owned policy, not a supported `py_image`
-API. It can be wrapped in a macro inside your own repository.
-
-The backend-equivalence tests compare ordered layer digests, filesystem diff IDs,
-and inferred environment across backends. Runtime checks import package metadata, execute the native `google-crc32c`
-extension (including its bundled shared library), and import both `backports.tarfile`
-and `backports.strenum` from separately installed distributions sharing a namespace. See [the standalone consumer](../e2e/rules_python/README.md) for a
-rules_python-only toolchain and requirements.txt setup.
-
-The [minimum-version module](../e2e/minimum/README.md) reuses these fixtures with
-exact dependency pins. CI runs the same archive, analysis, backend-equivalence,
-and Docker checks at both the supported minimums and current example versions.
-The local `oci_load.bzl` helper uses the public rule API that spans the upstream
-`oci_tarball` to `oci_load` macro rename.
+[py_image.bzl](py_image_with_rules_oci_and_aspect_rules_py/shared/py_image.bzl)
+and
+[py_image.bzl](py_image_with_rules_img_and_rules_python/shared/py_image.bzl) are
+caller-owned wrappers. The ruleset does not export a `py_image` rule. Focused
+checks for individual behaviors live under [e2e](../e2e).

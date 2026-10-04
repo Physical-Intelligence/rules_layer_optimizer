@@ -52,6 +52,46 @@ def test_split_runfiles(tmp_path: pathlib.Path) -> None:
     }
 
 
+def test_package_named_app_does_not_collide_with_entrypoint(tmp_path: pathlib.Path) -> None:
+    classification = tmp_path / "files"
+    classification.write_text("pip external/wheel/site-packages/pkg.py\n")
+    mtree = tmp_path / "input.mtree"
+    mtree.write_text(
+        "#mtree\n"
+        "app/ type=dir\n"
+        "app/app type=file content=out/app\n"
+        "app/app.py type=file content=app/app.py\n"
+        "app/app.runfiles/_main/app/app.py type=file content=app/app.py\n"
+    )
+    source = tmp_path / "source.mtree"
+    interpreter = tmp_path / "interpreter.mtree"
+    subprocess.run(
+        [
+            os.environ["GAWK"],
+            "-v",
+            f"classification={classification}",
+            "-v",
+            "prefix=app/app",
+            "-v",
+            f"source={source}",
+            "-v",
+            f"interpreter={interpreter}",
+            "-f",
+            os.environ["SPLIT_AWK"],
+            str(mtree),
+        ],
+        check=True,
+    )
+    assert source.read_text() == (
+        "#mtree\n"
+        "./app type=file content=out/app\n"
+        "./app.runfiles/_main/app/app.py type=file content=app/app.py\n"
+    )
+    assert interpreter.read_text() == "#mtree\n"
+
+
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as directory:
         test_split_runfiles(pathlib.Path(directory))
+    with tempfile.TemporaryDirectory() as directory:
+        test_package_named_app_does_not_collide_with_entrypoint(pathlib.Path(directory))

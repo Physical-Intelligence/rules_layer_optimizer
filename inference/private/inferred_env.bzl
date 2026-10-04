@@ -130,7 +130,7 @@ def make_env_file(dependency_aspects = []):
             "env_separators": attr.string_dict(default = DEFAULT_ENV_SEPARATORS),
             "deps": attr.label_list(aspects = [dependency_graph_aspect] + dependency_aspects),
             "extra_env": attr.string_dict(),
-            "inferences": attr.label_list(),
+            "inferences": attr.label_list(providers = [EnvInferenceBundleInfo]),
             "pythonpath_deps": attr.label_list(),
             "runfiles_root": attr.string(default = "/app.runfiles"),
         },
@@ -164,14 +164,5 @@ def _inference_triggers(for_deps):
 def _inference_entries(ctx):
     entries = []
     for inference in ctx.attr.inferences:
-        if EnvInferenceBundleInfo in inference:
-            entries.extend(inference[EnvInferenceBundleInfo].entries)
-        elif EnvInferenceInfo in inference:
-            entries.append(struct(
-                env = inference[EnvInferenceInfo].env,
-                for_deps = tuple(inference[EnvInferenceInfo].for_deps),
-                for_keys = tuple(inference[EnvInferenceInfo].for_keys),
-            ))
-        else:
-            fail("{} is not an env_inference or env_inference_bundle target".format(inference.label))
+        entries.extend(inference[EnvInferenceBundleInfo].entries)
     return entries

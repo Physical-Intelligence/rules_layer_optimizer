@@ -1,61 +1,207 @@
 # Configuration
 
-See the [quickstart](../README.md#get-started) for installation and
-[release preparation](../.bcr/README.md) for packaged installation.
+`rules_layer_optimizer` involves multiple repository rules and aspect rules, so
+there are a few pieces of configuration required outside of simply invoking
+`optimized_layers`.
 
-Layer planning, materialization, and generic inference work without root-module
-configuration. Inference traverses `deps`, `src`, `srcs`, `data`, `actual`, and
-`venv` by default. To replace that list, optionally configure the extension:
+## Infer Apt packages
+
+The need to include an apt package in an application's image is usually tied to
+some other library target which runs code dependent on that apt package; the
+problem is that Bazel doesn't know about this dependency.
+
+First, declare the inferences once in a shared location:
+
+```starlark
+load("@rules_layer_optimizer//inference:defs.bzl", "layer_inference_bundle")
+load("@rules_layer_optimizer//python:inference.bzl", "apt_inference")
+
+# If a py_binary depends on this package, include the apt package.
+apt_inference(
+    name = "pyusb_apt",
+    for_deps = ["@pip//pyusb"],
+    packages = ["@noble//libusb-1.0-0-dev"],
+)
+
+# Bundle together multiple inferences, making them ready for `inferred_apt_deps`.
+layer_inference_bundle(
+    name = "apt_inferences",
+    inferences = [":pyusb_apt"],
+    visibility = ["//visibility:public"],
+)
+```
+
+Then, consume the inferences with `inferred_apt_deps` to walk the application's
+dependency graph and produce a target containing all of the inferred
+dependencies:
+
+```starlark
+load("@rules_layer_optimizer//python:inference.bzl", "inferred_apt_deps")
+
+inferred_apt_deps(
+    name = "app_apt",
+    # Extra packages to include regardless of inference
+    base_packages = ["@noble//ca-certificates"],
+    # Application entrypoint
+    deps = [":app"],
+    # The bundle of inferences from above
+    inferences = ["//shared:apt_inferences"],
+)
+```
+
+The result is a layer candidate. Group it with the binary's other tars in
+`optimized_layers`. [APT layers](../apt/README.md) lists the remaining
+arguments.
+
+## Infer environment variables
+
+Just like apt packages, the need to include an environment variable in an
+application's image is usually tied to some other library target which runs
+code dependent on that variable; the problem is that Bazel doesn't know about
+this.
+
+First, declare the inferences once in a shared location:
+
+```starlark
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
+load("@rules_layer_optimizer//python:inference.bzl", "env_inference")
+
+# If a py_binary depends on this package, include the environment variable.
+env_inference(
+    name = "colorama_env",
+    env = {"COLORAMA_AVAILABLE": "1"},
+    for_deps = ["@pip//colorama"],
+)
+
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama_env"],
+    visibility = ["//visibility:public"],
+)
+```
+
+Then, consume the inferences with `env_file` to walk the application's
+dependency graph and produce a target containing all of the inferred
+environment variables:
+
+```starlark
+load("@rules_layer_optimizer//python:inference.bzl", "env_file")
+
+env_file(
+    name = "app_env",
+    # Extra variables to include regardless of inference
+    base_env = {"PATH": "/usr/bin"},
+    # Application entrypoint
+    deps = [":app"],
+    # The bundle of inferences from above
+    inferences = ["//shared:env_inferences"],
+)
+```
+
+The result is a `KEY=VALUE` file. Pass it to `oci_image` as `env` or to
+`image_manifest` as `env_file`. [Dependency inference](../inference/README.md)
+lists the remaining arguments.
+
+## Repo-wide facts
+
+Extension configuration must also be set in `MODULE.bazel`. The sections below
+describe the options.
 
 ```starlark
 inference = use_extension(
     "@rules_layer_optimizer//inference:extensions.bzl",
     "oci_image_inference",
 )
-inference.configure(dependency_attributes = ["deps", "src", "srcs", "actual", "venv"])
 use_repo(inference, "oci_image_inference_config")
 ```
 
-To enable Python package identities, add `pip_hub` to a `configure` tag.
-`dependency_attributes` can be omitted to keep the defaults:
+### Which targets count as dependencies
 
-- aspect_rules_py: `pip_hub = "@packages//:defs.bzl"`
-- rules_python: `pip_hub = "@pip//:requirements.bzl"`
+Inference walks the binary and follows `deps`, `src`, `srcs`, `data`,
+`actual`, and `venv`. That list matches a normal `py_binary`. Replace it when
+a rule in your repo carries dependencies on some other attribute. There is one
+`configure` tag:
 
-Package identity inference does not require size hints. Package **layer production**
-requires positive size estimates; configure at most one `inference.pip_size_hint`
-tag when producing package layers. A uv lock works with either
-adapter: `inference.pip_size_hint(lock = "//:uv.lock")`. aspect_rules_py selects
-an exact wheel size by filename. rules_python uses the largest available wheel
-size for each distribution, since its py_library does not expose that filename.
+```starlark
+inference.configure(
+    dependency_attributes = ["deps", "src", "srcs", "actual", "venv"],
+)
+```
 
-Consumers using requirements.txt without uv can provide estimates directly:
+### Which pip package a dependency is
+
+Apt and environment mappings name a distribution, such as `@pip//colorama`.
+The pip hub is what makes that label mean the same distribution for every
+binary. Put `pip_hub` on the `configure` tag above. Leave
+`dependency_attributes` unset to keep the default walk.
+
+An aspect_rules_py hub exposes its distributions from `defs.bzl`:
+
+```starlark
+inference.configure(pip_hub = "@pip//:defs.bzl")
+```
+
+A rules_python hub exposes them from `requirements.bzl`:
+
+```starlark
+inference.configure(pip_hub = "@pip//:requirements.bzl")
+```
+
+Both arguments belong on that single tag when a repo needs a custom walk and a
+hub:
+
+```starlark
+inference.configure(
+    dependency_attributes = ["deps", "src", "srcs", "actual", "venv"],
+    pip_hub = "@pip//:requirements.bzl",
+)
+```
+
+With the hub set, mappings loaded from `python:inference.bzl` match a binary
+that depends on the distribution. The exact-label rules in `apt:defs.bzl` and
+`inference:defs.bzl` stay available when the trigger is an ordinary target.
+
+### How large each pip package is
+
+Name matching is enough to decide that a variable or an apt package belongs in
+the image. A separate layer per distribution also needs a size, so the
+optimizer can fold small wheels together and keep large ones alone. Declare
+`pip_size_hint` once.
+
+A `uv.lock` carries those sizes for either adapter:
+
+```starlark
+inference.pip_size_hint(lock = "//:uv.lock")
+```
+
+aspect_rules_py uses the size of the wheel it selected. rules_python uses the
+largest wheel recorded for that distribution, because the selected filename is
+not available from the `py_library`.
+
+A requirements lock without `uv.lock` can supply positive byte counts as
+strings:
 
 ```starlark
 inference.pip_size_hint(size_overrides = {"colorama": "25335"})
 ```
 
-Values must be positive byte counts, supplied as strings. With a uv lock,
-overrides are limited to source-built or unsized packages and act as fallbacks
-for exact wheel sizes. Without a lock, they supply all package size estimates.
-See the [standalone rules_python module](../e2e/rules_python/MODULE.bazel).
+The tag takes a `lock`, `size_overrides`, or both. Alongside a lock, an
+override fills in a source-built package or a wheel the lock left unsized.
 
-The [APT adapter](../apt/README.md) takes hints from caller-supplied
-rules_distroless v2 locks:
+### How large each apt package is
+
+Deb packages need the same kind of size before they can share a flattened
+layer. Read it from a rules_distroless v2 lock. Repeat `apt_size_hint` for
+every package repository:
 
 ```starlark
 inference.apt_size_hint(
-    dependency_set = "debian",
+    dependency_set = "noble",
     lock = "//:apt.lock.json",
-    repository = "@my_debian_packages//:dpkg_status",
+    repository = "@noble//:dpkg_status",
 )
 ```
 
-Repository labels respect Bzlmod mappings. The example smoke module deliberately
-uses a differently named package repository and a small synthetic v2 lock.
-See [APT layers](../apt/README.md) for resolver requirements.
-
-The root may supply at most one `configure` tag; other modules cannot override
-its policy. Size hints may be supplied without a pip hub, and a pip hub may be
-supplied without size hints. `apt_size_hint` tags can be repeated for multiple
-package repositories. Each requires `dependency_set`, `lock`, and `repository`.
+`dependency_set` selects that set inside the lock. `repository` is a label in
+the set's repository, so a Bzlmod rename still resolves. These sizes are what
+the apt layers above carry into the optimizer.

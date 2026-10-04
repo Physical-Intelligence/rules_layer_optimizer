@@ -3,9 +3,7 @@ Aspect to collect pip package dependencies.
 """
 
 load("@oci_image_inference_config//:config.bzl", "DEPENDENCY_ATTRIBUTES")
-
-# buildifier: disable=bzl-visibility
-load("//inference/private:dependency_inference.bzl", "DependencyKeyInfo")
+load("//inference:providers.bzl", "DependencyKeyInfo")
 load("//python/private:aspect_rules_py.bzl", "wheel_identity", "wheel_package")
 load("//python/private:pip_utils.bzl", "pip_inference_key", "pip_package_size_hint")
 load("//python/private:rules_python_wheel.bzl", rules_python_package = "wheel_package")

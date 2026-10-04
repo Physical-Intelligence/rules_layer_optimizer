@@ -7,15 +7,9 @@ mappings that matched.
 """
 
 load("//apt/private:distroless.bzl", "apt_size_hint_aspect")
-
-# buildifier: disable=bzl-visibility
-load("//inference/private:dependency_inference.bzl", "dependency_graph_aspect", "dependency_identities", "inference_matches", "validate_inference_triggers")
-
-# buildifier: disable=bzl-visibility
-load("//inference/private:inferred_layers.bzl", "LayerInferenceBundleInfo", "LayerInferenceInfo")
-
-# buildifier: disable=bzl-visibility
-load("//layers/private:layer_groups.bzl", "LayerTarsInfo", "SizeHintInfo", "merge_size_hints")
+load("//inference:graph.bzl", "dependency_graph_aspect", "dependency_identities", "inference_matches", "validate_inference_triggers")
+load("//inference:providers.bzl", "LayerInferenceBundleInfo", "LayerInferenceInfo")
+load("//layers:providers.bzl", "LayerTarsInfo", "SizeHintInfo", "merge_size_hints")
 
 def _apt_inference_rule_impl(ctx):
     files = [p.files for p in ctx.attr.packages + ctx.attr.tars]
@@ -149,7 +143,10 @@ def make_inferred_apt_deps(dependency_aspects = []):
         implementation = inferred_apt_deps_rule_impl,
         attrs = {
             "deps": attr.label_list(aspects = [dependency_graph_aspect] + dependency_aspects),
-            "inferences": attr.label_list(default = []),
+            "inferences": attr.label_list(
+                default = [],
+                providers = [LayerInferenceBundleInfo],
+            ),
             "base_packages": attr.label_list(default = [], aspects = [apt_size_hint_aspect]),
             "packages": attr.label_list(default = [], aspects = [apt_size_hint_aspect]),
         },
@@ -166,16 +163,5 @@ def _inference_triggers(for_deps):
 def _inference_entries(ctx):
     entries = []
     for inference in ctx.attr.inferences:
-        if LayerInferenceBundleInfo in inference:
-            entries.extend(inference[LayerInferenceBundleInfo].entries)
-        elif LayerInferenceInfo in inference:
-            sizes = inference[SizeHintInfo].sizes if SizeHintInfo in inference else {}
-            entries.append(struct(
-                for_deps = tuple(inference[LayerInferenceInfo].for_deps),
-                for_keys = tuple(inference[LayerInferenceInfo].for_keys),
-                files = inference.files,
-                sizes = sizes,
-            ))
-        else:
-            fail("{} is not a layer_inference or layer_inference_bundle target".format(inference.label))
+        entries.extend(inference[LayerInferenceBundleInfo].entries)
     return entries

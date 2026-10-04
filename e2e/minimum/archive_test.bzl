@@ -1,1 +1,0 @@
-../../examples/archive_test.bzl

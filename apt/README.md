@@ -5,9 +5,10 @@
 `tars`. Consumers select distributions and package repositories themselves.
 Use `python:inference.bzl` for the variants that match logical pip packages.
 
-`inferred_apt_deps` combines matched mappings with explicit `base_packages` and
-`packages`. Outputs carry LayerTarsInfo plus SizeHintInfo for primary package
-tars. Transitive package tars are retained and may remain unsized. Duplicate
+`inferred_apt_deps` accepts `layer_inference_bundle` targets. It combines matched
+mappings with explicit `base_packages` and `packages`. Outputs carry LayerTarsInfo
+plus SizeHintInfo for primary package tars. Transitive package tars are retained
+and may remain unsized. Duplicate
 files are removed and conflicting hints fail analysis.
 
 The adapter identifies a package's primary tar through its public `:data`
@@ -21,7 +22,7 @@ generates v2 locks or supply an existing compatible lock. Tests use synthetic
 package repositories rather than live resolution.
 
 See [configuration](../docs/configuration.md) for module setup. The
-[smoke module](../e2e/smoke/README.md) verifies the adapter contract without a
+[distroless contract](../e2e/distroless/README.md) verifies the adapter contract without a
 production APT universe. Base packages, compatibility shims, dpkg status policy,
 and distribution selection are deliberately consumer-owned.
 
@@ -33,6 +34,6 @@ registers a mapping and a private `<name>_for_deps_test` that validates trigger 
 The Python variant derives `for_keys` itself from the configured hub.
 
 `inferred_apt_deps(name, deps = [], inferences = [], base_packages = [], packages = [], **kwargs)`
-collects base packages, matching mappings, then explicit packages in that order.
+takes `layer_inference_bundle` targets in `inferences`. It collects base packages, matching mappings, then explicit packages in that order.
 It exposes `DefaultInfo`, `LayerTarsInfo`, and `SizeHintInfo`.
 Both APIs accept ordinary Bazel attributes such as `visibility` and `tags`.

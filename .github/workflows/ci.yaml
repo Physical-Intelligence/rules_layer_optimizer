@@ -60,18 +60,6 @@ jobs:
       - if: matrix.module == '.'
         name: Verify source archive installation
         run: bazel run //tools:release -- --output "$RUNNER_TEMP/rules_layer_optimizer_release" --verify
-      - if: matrix.module == 'examples' || matrix.module == 'e2e/minimum'
-        name: Run both Python adapters with both image backends
-        working-directory: ${{ matrix.module }}
-        run: |
-          bazel run //python_image:load
-          docker run --rm --network none rules-layer-optimizer-example:local | grep -F 'hello from reusable layers'
-          bazel run //python_image:img_load
-          docker run --rm --network none rules-layer-optimizer-aspect-img:local | grep -F 'hello from reusable layers'
-          bazel run //rules_python_image:load
-          docker run --rm --network none rules-layer-optimizer-rules-python:local | grep -F 'hello from reusable layers'
-          bazel run //rules_python_image:img_load
-          docker run --rm --network none rules-layer-optimizer-rules-python-img:local | grep -F 'hello from reusable layers'
 
   all-tests-passed:
     runs-on: ubuntu-24.04

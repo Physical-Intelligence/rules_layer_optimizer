@@ -1,0 +1,7 @@
+import %workspace%/../../.bazelrc
+
+build --@pip//dep_group=py-image
+
+# rules_python's own module defaults to 3.11. Pin 3.12 so it agrees with the
+# aspect_rules_py interpreter.
+build --@rules_python//python/config_settings:python_version=3.12

@@ -1,3 +1,4 @@
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
 load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
@@ -12,11 +13,16 @@ env_inference(
     for_deps = ["@pip//colorama"],
 )
 
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":flags"],
+)
+
 env_file(
     name = "env",
     base_env = {"FLAGS": "--first"},
     env_separators = {"FLAGS": " "},
-    inferences = [":flags"],
+    inferences = [":env_inferences"],
     deps = [":app"],
 )
 

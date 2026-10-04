@@ -74,3 +74,27 @@ def render_apt_size_hints_bzl(size_hints):
 
     lines.append("}")
     return "\n".join(lines) + "\n"
+
+def _apt_size_hints_repository_impl(rctx):
+    size_hints = {}
+    for index in range(len(rctx.attr.locks)):
+        lock_hints = parse_apt_lock_size_hints(
+            rctx.read(rctx.attr.locks[index]),
+            rctx.attr.dependency_sets[index],
+            rctx.attr.repositories[index].repo_name,
+        )
+        for package, size in lock_hints.items():
+            previous_size = size_hints.get(package)
+            size_hints[package] = max(previous_size or 0, size)
+
+    rctx.file("BUILD.bazel", "exports_files([\"size_hints.bzl\"])\n")
+    rctx.file("size_hints.bzl", render_apt_size_hints_bzl(size_hints))
+
+apt_size_hints_repository = repository_rule(
+    implementation = _apt_size_hints_repository_impl,
+    attrs = {
+        "dependency_sets": attr.string_list(),
+        "locks": attr.label_list(allow_files = [".json"]),
+        "repositories": attr.label_list(),
+    },
+)

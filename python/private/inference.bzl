@@ -1,13 +1,7 @@
 """Python-aware inference adapters for configured pip hubs."""
 
-# buildifier: disable=bzl-visibility
-load("//apt/private:inferred_apt_deps.bzl", "make_inferred_apt_deps", _apt_inference = "apt_inference")
-
-# buildifier: disable=bzl-visibility
-load("//inference/private:inferred_env.bzl", "make_env_file", _env_inference = "env_inference")
-
-# buildifier: disable=bzl-visibility
-load("//inference/private:inferred_layers.bzl", "make_inferred_layers", _layer_inference = "layer_inference")
+load("//apt:defs.bzl", "make_inferred_apt_deps", _apt_inference = "apt_inference")
+load("//inference:graph.bzl", "make_env_file", "make_inferred_layers", _env_inference = "env_inference", _layer_inference = "layer_inference")
 load("//python/private:pip_deps.bzl", "pip_deps_aspect")
 load("//python/private:pip_utils.bzl", "configured_pip_package", "pip_inference_key")
 

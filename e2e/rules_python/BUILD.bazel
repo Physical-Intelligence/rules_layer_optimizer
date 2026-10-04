@@ -1,4 +1,5 @@
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@rules_layer_optimizer//inference:defs.bzl", "env_inference_bundle")
 load("@rules_layer_optimizer//layers:defs.bzl", "layer_group")
 load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
 load("@rules_layer_optimizer//python:inference.bzl", "env_file", "env_inference")
@@ -54,11 +55,16 @@ env_inference(
     ],
 )
 
+env_inference_bundle(
+    name = "env_inferences",
+    inferences = [":colorama"],
+)
+
 env_file(
     name = "env",
     base_env = {},
     extra_env = {},
-    inferences = [":colorama"],
+    inferences = [":env_inferences"],
     runfiles_root = "/app.runfiles",
     deps = [":app"],
 )
