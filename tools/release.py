@@ -86,7 +86,10 @@ def verify_archive(root: pathlib.Path, output: pathlib.Path) -> None:
         for key, value in os.environ.items()
         if not key.startswith(("RUNFILES_", "JAVA_RUNFILES"))
     }
-    for fixture in ("e2e/smoke", "examples"):
+    for fixture in (
+        "e2e/distroless",
+        "examples/py_image_with_rules_oci_and_aspect_rules_py",
+    ):
         consumer = output / "consumers" / fixture
         shutil.copytree(
             root / fixture,

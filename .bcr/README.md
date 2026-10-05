@@ -21,8 +21,9 @@ bazel run //tools:release -- --output /tmp/rules_layer_optimizer_release --verif
 ```
 
 This creates a deterministic archive, `source.json`, and
-`installation.MODULE.bazel`. Verification runs independent smoke and image
-consumers against the archive. Archives use `git archive` and the exclusions in `.gitattributes`. Local
+`installation.MODULE.bazel`. Verification runs the distroless contract and a
+py_image example against the archive. Archives use `git archive` and the
+exclusions in `.gitattributes`. Local
 preparation packages **committed HEAD**, excluding dirty and untracked changes.
 Commit changes before rehearsing a release. Release automation archives the
 version tag itself and reads its module version. Test consumers omit the version
