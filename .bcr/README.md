@@ -11,8 +11,11 @@ The repository's **Release tags** ruleset restricts creation, updates, and delet
 of `v*` tags to maintainers and administrators. Release authority is managed in
 GitHub repository settings.
 
-The BCR templates use that release asset. Registry submission is a separate step;
-these templates follow [publish-to-bcr](https://github.com/bazel-contrib/publish-to-bcr/tree/main/templates/.bcr).
+The BCR templates use that release asset. The same tag runs
+[Publish to BCR](../.github/workflows/publish.yaml), which opens a pull request
+from `Physical-Intelligence/bazel-central-registry`. The first version of a
+module still needs a registry maintainer to merge it. Templates follow
+[publish-to-bcr](https://github.com/bazel-contrib/publish-to-bcr/tree/main/templates/.bcr).
 
 For a local rehearsal:
 
