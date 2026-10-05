@@ -25,3 +25,15 @@ jobs:
         dist/rules_layer_optimizer-*.tar.gz
         dist/source.json
         dist/installation.MODULE.bazel
+
+  publish:
+    needs: release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/publish.yaml
+    with:
+      tag_name: ${{ github.ref_name }}
+    secrets:
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}

@@ -1,0 +1,34 @@
+name: Publish to BCR
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        required: true
+        type: string
+    secrets:
+      publish_token:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: git tag being released
+        required: true
+        type: string
+
+jobs:
+  publish:
+    # Semantic version reference required so SLSA verification accepts the builder.
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.5.1
+    with:
+      tag_name: ${{ inputs.tag_name }}
+      registry_fork: Physical-Intelligence/bazel-central-registry
+      # The token belongs to a person. Mark the registry pull request ready for
+      # review after it opens; that is what lets the author satisfy review.
+      draft: true
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    secrets:
+      publish_token: ${{ secrets.publish_token || secrets.BCR_PUBLISH_TOKEN }}
