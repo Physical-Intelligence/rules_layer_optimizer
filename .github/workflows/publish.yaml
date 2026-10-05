@@ -6,15 +6,6 @@ on:
       tag_name:
         required: true
         type: string
-    secrets:
-      publish_token:
-        required: true
-  workflow_dispatch:
-    inputs:
-      tag_name:
-        description: git tag being released
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -23,6 +14,8 @@ jobs:
     with:
       tag_name: ${{ inputs.tag_name }}
       registry_fork: Physical-Intelligence/bazel-central-registry
+      # The publish token lives in this environment, which allows only v* tags.
+      environment: bcr
       # The token belongs to a person. Mark the registry pull request ready for
       # review after it opens; that is what lets the author satisfy review.
       draft: true
@@ -31,4 +24,4 @@ jobs:
       contents: write
       id-token: write
     secrets:
-      publish_token: ${{ secrets.publish_token || secrets.BCR_PUBLISH_TOKEN }}
+      publish_token: ${{ secrets.PUBLISH_TOKEN }}
