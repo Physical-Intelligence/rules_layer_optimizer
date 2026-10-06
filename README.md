@@ -84,11 +84,17 @@ load("@rules_layer_optimizer//layers:distroless.bzl", "optimized_layers")
 
 optimized_layers(
     name = "layers",
-    groups = [layer_group(
-        name = "packages",
-        targets = [":package_a", ":package_b"],
-        overflow = "flatten",
-    )],
+    groups = [
+        layer_group(
+            name = "group1",
+            targets = [":package_a", ":package_b"],
+            overflow = "flatten",
+        ),
+        layer_group(
+            name = "group2",
+            targets = [":package_c", ":package_d"],
+        ),
+    ],
     layer_budget = 10,
     size_bytes_threshold = 1024 * 1024,
     visibility = ["//visibility:public"],
