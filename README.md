@@ -7,8 +7,7 @@ The following are provided:
 
 - Build separate image layers for each apt or python package, shared across all
   consuming applications
-- Sort layers by size
-- Flatten the long-tail of small packages, to stay under a configurable layer
+- Optimize layers to sort by size and flatten the long-tail of small packages, staying under a configurable layer
   cap or size threshold
 - Infer apt package dependencies and environment variables
 - Examples for how to combine all of the above into a simple `py_image` macro,
