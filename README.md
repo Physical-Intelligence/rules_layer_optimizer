@@ -1,17 +1,29 @@
 # rules_layer_optimizer
 
-This Bazel ruleset provides building blocks for creating optimized application
-OCI images based on an executable entrypoint, e.g. a `py_binary` target.
+This Bazel ruleset provides building blocks for creating optimized
+application-oriented OCI images based on an executable entrypoint, e.g. a
+`py_binary` target.
 
-The following are provided:
+The [examples](examples/README.md) demonstrate how these can be combined into a
+`py_image` macro with a simple interface (just `name` and the `py_binary`), and
+whose layer structure looks like this:
 
-- Build separate image layers for each apt or python package, shared across all
-  consuming applications
-- Optimize layers to sort by size and flatten the long-tail of small packages, staying under a configurable layer
-  cap or size threshold
-- Infer apt package dependencies and environment variables
-- Examples for how to combine all of the above into a simple `py_image` macro,
-  for producing an OCI-compatible image from a `py_binary`
+![Layer stack: application source, Python packages with a flattened tail, the interpreter, then apt packages with a flattened tail](docs/layer_stack.png)
+
+There are 4 groups of layers in this image (from bottom to top):
+
+1. Apt packages, heaviest to lightest, with a flattened long-tail layer at the
+   end
+2. The python interpreter
+3. Python packages, heaviest to lightest, with a flattened long-tail layer at
+   the end
+4. 1st-party source code
+
+This layout has a few nice properties. Each application image contains only its
+minimal set of runtime dependencies. It also maximizes the amount of sharable
+work: aside from the flattened long-tail layers and source code, all other
+layers are built, uploaded, and downloaded only once even if many applications
+use them.
 
 ## Building blocks
 
