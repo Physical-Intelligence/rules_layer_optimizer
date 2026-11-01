@@ -2,7 +2,7 @@
 
 This Bazel ruleset provides building blocks for creating optimized
 application-oriented OCI images based on an executable entrypoint, e.g. a
-`py_binary` target.
+`py_binary` target. This ruleset is also featured in a [Bazelcon 2026 talk](https://www.youtube.com/watch?v=-HCcaP6tA_0&list=PLH0fMKiAG8uQ&index=37).
 
 The [examples](examples/README.md) demonstrate how these can be combined into a
 `py_image` macro with a simple interface (just `name` and the `py_binary`), and
