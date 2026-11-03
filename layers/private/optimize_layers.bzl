@@ -63,7 +63,7 @@ def optimize_layers_rule_impl(ctx):
             file_groups[f] = group.name
     all_files = []
     for group in groups:
-        all_files.extend(group.files)
+        all_files.extend(_deduplicate(group.files))
 
     generated_layer_limit = ctx.attr.layer_budget
     if generated_layer_limit < 1:

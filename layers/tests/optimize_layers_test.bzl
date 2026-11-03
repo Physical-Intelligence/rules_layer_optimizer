@@ -113,6 +113,22 @@ def _optimization_plan_test_impl(ctx):
 
 optimization_plan_test = analysistest.make(_optimization_plan_test_impl)
 
+def _flatten_all_plan_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    plans = [
+        action
+        for action in analysistest.target_actions(env)
+        if any([output.basename.endswith("_optimization_plan.json") for output in action.outputs.to_list()])
+    ]
+    asserts.equals(env, 1, len(plans))
+    plan = json.decode(plans[0].content)
+    asserts.equals(env, 1, plan["summary"]["input_tar_count"])
+    asserts.equals(env, 1, len(plan["layers"][0]["inputs"]))
+    asserts.equals(env, 1, plan["layers"][0]["known_input_size_bytes"])
+    return analysistest.end(env)
+
+flatten_all_plan_test = analysistest.make(_flatten_all_plan_test_impl)
+
 def optimize_layers_test_suite(name):
     """Declares tests for thresholding, budgeting, validation, and diagnostics.
 
@@ -304,11 +320,28 @@ def optimize_layers_test_suite(name):
         target_under_test = ":threshold_subject_optimization_plan",
     )
 
+    optimized_layers(
+        name = "flatten_all_shared_tar_subject",
+        groups = [layer_group(
+            name = "packages",
+            targets = [":heavy_size_a", ":heavy_size_c"],
+            overflow = "flatten",
+        )],
+        flatten_all = True,
+        layer_budget = 4,
+        size_bytes_threshold = 1024,
+    )
+    flatten_all_plan_test(
+        name = "flatten_all_plan_test",
+        target_under_test = ":flatten_all_shared_tar_subject_all_tars",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             ":conflicting_size_test",
             ":duplicate_group_test",
+            ":flatten_all_plan_test",
             ":insufficient_budget_test",
             ":invalid_member_hint_test",
             ":multiple_outputs_test",
