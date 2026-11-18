@@ -2,7 +2,7 @@
 
 load("@aspect_bazel_lib//lib:tar.bzl", "mtree_spec", "tar")
 load("//python/private:mtree_symlinks.bzl", "preserve_mtree_symlinks")
-load("//python/private:pip_layer_aspect.bzl", "pip_layer_aspect")
+load("//python/private:pip_layer_aspect.bzl", "ZSTD_THREADS_OPTION", "pip_layer_aspect")
 load("//python/private:pip_layer_reducer.bzl", "make_pip_layer_reducer")
 load("//python/private:repository_paths.bzl", "module_extension_repo_pattern")
 
@@ -67,7 +67,7 @@ def py_image_layer(
             srcs = [binary],
             mtree = ":" + name + "_" + part + "_mtree",
             compress = compress,
-            args = (["--options=zstd:threads=0"] if compress == "zstd" else []) + tar_args,
+            args = ([ZSTD_THREADS_OPTION] if compress == "zstd" else []) + tar_args,
             compute_unused_inputs = compute_unused_inputs,
             **kwargs
         )
