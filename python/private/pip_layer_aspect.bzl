@@ -22,6 +22,8 @@ _PIP_LAYER_MTREE_AWK = Label("//python/private:pip_layer_mtree.awk")
 
 _KEEP_KINDS = ["py_library", "py_binary", "whl_install", "alias"]
 
+ZSTD_THREADS_OPTION = "--options=zstd:threads=4"
+
 # The mtree filter applied to each wheel TreeArtifact before bsdtar packs it
 # lives in pip_layer_mtree.awk.
 
@@ -80,7 +82,7 @@ def _declare_pip_tar(target, ctx, normalized_label):
 
     tar_args = ctx.actions.args()
     tar_args.add("--create")
-    tar_args.add_all(["--options=zstd:threads=0", "--zstd"])
+    tar_args.add_all([ZSTD_THREADS_OPTION, "--zstd"])
     tar_args.add("--file", out)
     tar_args.add("@" + mtree.path)
     ctx.actions.run(
